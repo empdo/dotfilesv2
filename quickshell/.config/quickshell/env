@@ -1,0 +1,1 @@
+export QML2_IMPORT_PATH=/usr/lib/qt6/qml:$QML2_IMPORT_PATH

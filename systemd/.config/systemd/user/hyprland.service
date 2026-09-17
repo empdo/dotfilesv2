@@ -1,0 +1,13 @@
+[Unit]
+Description=Hyprland compositior
+
+[Service]
+ExecStart=/usr/bin/Hyprland
+Restart=no
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+StandradError=journal
+
+[Install]
+WantedBy=default.target

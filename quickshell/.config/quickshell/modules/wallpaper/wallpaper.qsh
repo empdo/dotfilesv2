@@ -1,0 +1,8 @@
+//wallpaper.qsh
+shell {
+    module wallpaper {
+        exec setwall {
+            command: ["/home/emil/.config/hypr/setwallpaper"]
+        }
+    }
+}

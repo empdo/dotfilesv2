@@ -1,0 +1,7 @@
+[init]
+	defaultBranch = main
+[fetch]
+	prune = true
+[user]
+	name = Emil Essung
+	email = emil.essung@live.se

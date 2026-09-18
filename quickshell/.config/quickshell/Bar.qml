@@ -8,13 +8,15 @@ import "."
 
 import "modules/clock"
 import "modules/power"
+import "modules/theme"
 import "modules/tray"
 import "modules/volume"
 import "modules/wallpaper"
+import "modules" as Modules
 
 Scope {
-    property color textColor: "#ebffd9"
-    property color backgroundColor: "#1a1a1a"
+    property color textColor: Modules.Theme.foreground
+    property color backgroundColor: Modules.Theme.background
 
     PanelWindow {
         id: bar
@@ -122,6 +124,14 @@ Scope {
                         }
 
                         anchors.centerIn: parent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // BELOW WALLPAPER: light/dark toggle
+                    ThemeToggle {
+                        id: themeToggle
+                        anchors.top: wallpaperItem.bottom
+                        anchors.topMargin: 15
                         anchors.horizontalCenter: parent.horizontalCenter
                     }
 

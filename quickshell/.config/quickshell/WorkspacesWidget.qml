@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
+import "modules" as Modules
 
 Item {
     // size to the content instead of filling the whole bar,
@@ -18,7 +19,7 @@ Item {
         // Arch logo
         Text {
             text: "󰣇"
-            color: "#ebffd9"
+            color: Modules.Theme.foreground
             rightPadding: 5
             topPadding: 8
             font.pixelSize: 30
@@ -29,9 +30,9 @@ Item {
         // Workspaces background
         Rectangle {
             id: repeaterBackground
-            color: "#1a1a1a"
+            color: Modules.Theme.background
             radius: 20
-            border.color: "#ebffd9"
+            border.color: Modules.Theme.foreground
             border.width: 1
             width: 28
             height: repeaterRow.implicitHeight + 16
@@ -51,8 +52,8 @@ Item {
                         width: 12
                         height: 12
                         radius: 6
-                        color: modelData.active ? "#ebffd9" : "transparent"
-                        border.color: "#ebffd9"
+                        color: modelData.active ? Modules.Theme.foreground : "transparent"
+                        border.color: Modules.Theme.foreground
                         border.width: 2
                         anchors.horizontalCenter: parent.horizontalCenter
 

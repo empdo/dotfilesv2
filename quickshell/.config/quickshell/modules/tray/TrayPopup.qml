@@ -3,11 +3,12 @@ import QtQuick
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Services.SystemTray
+import "../" as Modules
 
 Item {
     id: root
 
-    property color textColor: "#ebffd9"
+    property color textColor: Modules.Theme.foreground
     property int iconSize: 24
     property int columns: 4
 

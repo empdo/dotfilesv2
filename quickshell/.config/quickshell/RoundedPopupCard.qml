@@ -1,5 +1,6 @@
 // RoundedPopupCard.qml
 import QtQuick
+import "modules" as Modules
 
 Item {
     id: root
@@ -8,8 +9,8 @@ Item {
 
     property bool smoothBottom
 
-    property color backgroundColor: "#1a1a1a"
-    property color borderColor: "#ebffd9"
+    property color backgroundColor: Modules.Theme.background
+    property color borderColor: Modules.Theme.foreground
     property real outerRadius: 18
     property real innerRadius: 42
     property real padding: 80
@@ -21,6 +22,10 @@ Item {
     // Force canvas repaint during animated size changes
     onWidthChanged: canvas.requestPaint()
     onHeightChanged: canvas.requestPaint()
+
+    // ...and when the palette changes
+    onBackgroundColorChanged: canvas.requestPaint()
+    onBorderColorChanged: canvas.requestPaint()
 
     Canvas {
         id: canvas

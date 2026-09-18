@@ -2,9 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
-import "modules" as Modules
 import "."
 import "../components"
+import "../" as Modules
  
 Item {
     id: root
@@ -12,7 +12,7 @@ Item {
     implicitHeight: 110
 
     property var popup
-    property color textColor: "#ebffd9"
+    property color textColor: Modules.Theme.foreground
 
     RowLayout {
         anchors.fill: parent

@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import "../" as Modules
 
 Item {
     id: root
@@ -8,7 +9,7 @@ Item {
 
     // The icon glyph
     property alias text: iconLabel.text
-    property color color: "#ebffd9"
+    property color color: Modules.Theme.foreground
 
     // Hover scaling
     property bool hovered: false

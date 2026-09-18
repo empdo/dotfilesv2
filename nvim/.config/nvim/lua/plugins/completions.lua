@@ -41,6 +41,7 @@ return {
 					{ name = "jdtls" },
 					{ name = "qmlls" },
 					{ name = "clangd" },
+					{ name = "pylsp" },
 					--{ name = "vsnip" }, -- For vsnip users.
 					{ name = "luasnip" }, -- For luasnip users.
 					-- { name = 'ultisnips' }, -- For ultisnips users.

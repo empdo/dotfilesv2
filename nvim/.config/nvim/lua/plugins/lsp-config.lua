@@ -9,7 +9,7 @@ return {
 		"mason-org/mason-lspconfig.nvim",
 		config = function()
 			require("mason-lspconfig").setup({
-				ensure_installed = { "lua_ls", "ts_ls", "jdtls", "clangd", "qmlls", "tinymist" },
+				ensure_installed = { "lua_ls", "ts_ls", "jdtls", "clangd", "qmlls", "tinymist", "pylsp" },
 			})
 		end,
 	},
@@ -19,6 +19,7 @@ return {
 			local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 			vim.lsp.enable("jdtls")
+			vim.lsp.enable("pylsp")
 			vim.lsp.enable("qmlls")
 			vim.lsp.config("qmlls", {
 				capabilities = capabilities,
@@ -54,11 +55,11 @@ return {
 				},
 			})
 			vim.lsp.enable("lua_ls")
-			vim.keymap.set("n", "K", vim.lsp.buf.hover, {})
-			vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, {})
-			vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, {})
-			vim.keymap.set("n", "<leader>gr", vim.lsp.buf.references, {})
-			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, {})
+			vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover documentation" })
+			vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, { desc = "Show diagnostic" })
+			vim.keymap.set("n", "<leader>gd", vim.lsp.buf.definition, { desc = "Go to definition" })
+			vim.keymap.set("n", "<leader>gr", vim.lsp.buf.references, { desc = "List references" })
+			vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
 		end,
 	},
 }

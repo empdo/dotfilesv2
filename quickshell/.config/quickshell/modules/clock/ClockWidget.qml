@@ -9,7 +9,7 @@ Item {
     implicitWidth: 60
     implicitHeight: 120
 
-    property color textColor: "#ebffd9"
+    property color textColor: Modules.Theme.foreground
     property int labelHeight: 22
 
     Column {

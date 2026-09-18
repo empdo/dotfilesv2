@@ -1,11 +1,11 @@
 import QtQuick
 import QtQuick.Controls
 import Quickshell
-import "modules" as Modules
+import "../" as Modules
 
 Item {
     id: root
-    property color textColor: "#ebffd9"
+    property color textColor: Modules.Theme.foreground
 
     implicitWidth: 60
     implicitHeight: 40

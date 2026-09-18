@@ -1,0 +1,16 @@
+claude-desktop
+curseforge
+discord-canary
+eww
+iriunwebcam-bin
+jlink
+linux-wallpaperengine-git
+minecraft-launcher
+paru
+paru-debug
+python-eduvpn-client
+quickshell-git
+remarkable
+ripes-bin
+spotify
+zen-browser-bin

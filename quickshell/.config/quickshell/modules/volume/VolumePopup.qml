@@ -10,7 +10,7 @@ Item {
     implicitHeight: 240
 
     property var popup
-    property color textColor: "#ebffd9"
+    property color textColor: Modules.Theme.foreground
 
     ColumnLayout {
         anchors.fill: parent
@@ -28,14 +28,14 @@ Item {
         Label {
             Layout.alignment: Qt.AlignHCenter
             text: Modules.AudioService.muted ? "Muted" : Math.round(Modules.AudioService.volume * 100) + "%"
-            color: "#ebffd9"
+            color: Modules.Theme.foreground
             font.pixelSize: 18
         }
 
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: "#444"
+            color: Modules.Theme.divider
             Layout.topMargin: 6
             Layout.bottomMargin: 6
         }
@@ -77,14 +77,14 @@ Item {
                 background: Rectangle {
                     implicitHeight: 6
                     radius: 3
-                    color: "#333"
+                    color: Modules.Theme.trough
                     z: -1
 
                     Rectangle {
                         width: slider.visualPosition * parent.width
                         height: parent.height
                         radius: 3
-                        color: Modules.AudioService.muted ? "#666" : textColor
+                        color: Modules.AudioService.muted ? Modules.Theme.inactive : textColor
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
@@ -141,14 +141,14 @@ Item {
                 background: Rectangle {
                     implicitHeight: 6
                     radius: 3
-                    color: "#333"
+                    color: Modules.Theme.trough
                     z: -1
 
                     Rectangle {
                         width: slider.visualPosition * parent.width
                         height: parent.height
                         radius: 3
-                        color: Modules.AudioService.muted ? "#666" : textColor
+                        color: Modules.AudioService.muted ? Modules.Theme.inactive : textColor
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor

@@ -1,6 +1,7 @@
 // CalendarPopup.qml
 import QtQuick
 import QtQuick.Controls
+import "../" as Modules
 
 Rectangle {
     id: popup
@@ -8,7 +9,7 @@ Rectangle {
     implicitHeight: 270
     radius: 8
     color: "transparent"
-    border.color: "#ebffd9"
+    border.color: Modules.Theme.foreground
     border.width: 0
 
 
@@ -18,7 +19,7 @@ Rectangle {
 
         Text {
             text: Qt.formatDate(new Date(), "MMMM yyyy")
-            color: "#ebffd9"
+            color: Modules.Theme.foreground
             font.bold: true
             horizontalAlignment: Text.AlignHCenter
             width: parent.width
@@ -30,7 +31,7 @@ Rectangle {
                 model: ["Mo","Tu","We","Th","Fr","Sa","Su"]
                 delegate: Text {
                     text: modelData
-                    color: "#ebffd9"
+                    color: Modules.Theme.foreground
                     font.pixelSize: 12
                     width: 24
                     horizontalAlignment: Text.AlignHCenter
@@ -51,18 +52,21 @@ Rectangle {
             Repeater {
                 model: dayGrid.firstDay + dayGrid.daysInMonth
                 delegate: Rectangle {
+                    id: day
                     width: 24; height: 24; radius: 4
-                    border.color: "#ebffd9"
-                    border.width: index >= dayGrid.firstDay ? 1 : 0
-                    color: {
-                        const dayNum = index - dayGrid.firstDay + 1
-                        return index >= dayGrid.firstDay && dayNum === dayGrid.today.getDate()
-                            ? "#ebffd9" : "transparent"
-                    }
+
+                    readonly property bool inMonth: index >= dayGrid.firstDay
+                    readonly property int dayNum: index - dayGrid.firstDay + 1
+                    readonly property bool isToday: inMonth && dayNum === dayGrid.today.getDate()
+
+                    border.color: Modules.Theme.foreground
+                    border.width: inMonth ? 1 : 0
+                    color: isToday ? Modules.Theme.foreground : "transparent"
+
                     Text {
                         anchors.centerIn: parent
-                        color: parent.color === "#ebffd9" ? "#1a1a1a" : "#ebffd9"
-                        text: index >= dayGrid.firstDay ? (index - dayGrid.firstDay + 1) : ""
+                        color: day.isToday ? Modules.Theme.onAccent : Modules.Theme.foreground
+                        text: day.inMonth ? day.dayNum : ""
                         font.pixelSize: 12
                     }
                 }

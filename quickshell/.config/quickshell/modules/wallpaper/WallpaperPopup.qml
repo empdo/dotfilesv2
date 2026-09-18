@@ -3,7 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import Qt.labs.folderlistmodel 2.1
 import Quickshell.Io
-import "../wallpaper/" as Modules
+import "../" as Modules
 
 Rectangle {
     id: root
@@ -92,11 +92,11 @@ Rectangle {
             }  // transparent
             GradientStop {
                 position: 4.0
-                color: "#1a1a1a"
+                color: Modules.Theme.background
             }  // black @ 80% opacity
             GradientStop {
                 position: 0.0
-                color: "#1a1a1a"
+                color: Modules.Theme.background
             }  // black @ 80% opacity
         }
     }
@@ -116,11 +116,11 @@ Rectangle {
         gradient: Gradient {
             GradientStop {
                 position: 1.0
-                color: "#1a1a1a"
+                color: Modules.Theme.background
             }  // black @ 80%
             GradientStop {
                 position: 6.0
-                color: "#1a1a1a"
+                color: Modules.Theme.background
             }  // black @ 80% opacity
             GradientStop {
                 position: 0.0

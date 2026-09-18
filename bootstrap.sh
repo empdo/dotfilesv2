@@ -5,7 +5,7 @@ set -euo pipefail
 shopt -s dotglob nullglob
 
 DOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKGS=(hypr quickshell kitty wofi nvim gtk environment systemd easyeffects mime zsh tmux git wallpapers)
+PKGS=(hypr quickshell kitty wofi nvim gtk environment systemd easyeffects mime zsh tmux wallpapers)
 # Folders shared with other apps: link the files inside them, never the folder itself
 SHARED=" .config Pictures "
 BACKUP="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
@@ -33,6 +33,8 @@ clear_way() { # $1 = package dir, $2 = relative path prefix ("" or "dir/")
   done
 }
 
+mkdir -p "$HOME/.config" "$HOME/Pictures"   # keep these as real folders
+
 for pkg in "${PKGS[@]}"; do
   dir="$DOT/$pkg"
   [[ -d $dir && -n "$(ls -A "$dir")" ]] || { echo "skip $pkg (empty)"; continue; }
@@ -43,4 +45,9 @@ done
 
 systemctl --user daemon-reload 2>/dev/null || true
 command -v hyprctl >/dev/null && hyprctl reload >/dev/null 2>&1 || true
+
+# Build the keybind cheatsheet cache so SUPER + / works before the next login.
+# (Hyprland also rebuilds it on start and on every config reload.)
+python3 "$HOME/.config/quickshell/modules/cheatsheet/collect.py" 2>/dev/null || true
+
 echo "Done."

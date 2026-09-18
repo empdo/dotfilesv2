@@ -34,6 +34,13 @@ ZSH_THEME="robbyrussell"
 
 source $ZSH/oh-my-zsh.sh
 
-if [ -z "$TMUX" ]; then
-  tmux new-session -s "kitty-$(date +%s)"
+# Session manager: one shared, persistent herdr session.
+# A new window attaches to whatever tab is focused; press prefix + c in it to
+# branch onto a tab of its own, and the other windows stay where they are.
+# (Don't create that tab from here: `herdr tab create --focus` goes through the
+# socket API, which has no client field, so its focus applies to the whole
+# session and drags every attached window onto the new tab. Only navigation a
+# client does itself gives that client its own view.)
+if [[ -z $HERDR_ENV && -z $TMUX ]] && command -v herdr >/dev/null; then
+  herdr
 fi

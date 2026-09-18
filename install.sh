@@ -15,8 +15,9 @@ fi
 
 # Oh My Zsh (the .zshrc in this repo expects it)
 [[ -d ~/.oh-my-zsh ]] || RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-# tmux plugin manager
+# tmux plugin manager (tmux is no longer the default session manager -- herdr is --
+# but the config is still stowed for when tmux is started by hand)
 [[ -d ~/.tmux/plugins/tpm ]] || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 "$DOT/bootstrap.sh"
-echo "Log out and back in. In tmux, press prefix + I to install plugins."
+echo "Log out and back in; zsh starts herdr from then on."

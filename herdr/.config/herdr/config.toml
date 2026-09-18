@@ -1,0 +1,104 @@
+# herdr — terminal session manager (replaces tmux; see ../../../README.md)
+#
+# The keymap below is herdr's default v2 keymap with the handful of changes that
+# make it match the tmux config this setup used before (tmux/.tmux.conf):
+#
+#   prefix            ctrl+s      (not herdr's ctrl+b)
+#   focus pane        prefix h/j/k/l
+#   resize pane       prefix H/J/K/L   (herdr puts *swap* there by default)
+#   reload config     prefix r         (herdr's default is prefix shift+r)
+#
+# Everything displaced by those changes moved one shift/ctrl over rather than
+# being dropped. Bindings are spelled out even where they equal herdr's default,
+# so this file is the whole keymap: `herdr --default-config` shows the originals.
+#
+# Keys are letters wherever there is a choice — this machine uses a Swedish
+# layout, where the US punctuation tmux binds (% " & ;) sit behind shift.
+#
+# Validate after editing:  herdr config check
+# Apply without a restart: herdr server reload-config   (or prefix r)
+
+onboarding = false
+
+[keys]
+# --- prefix ---------------------------------------------------------------
+prefix = "ctrl+s"
+
+# --- panes ----------------------------------------------------------------
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+
+# tmux: bind-key H/J/K/L resize-pane. herdr binds swap here by default, so swap
+# moves to prefix+ctrl and resize mode (prefix+r by default) moves to shift+r.
+resize_pane_left = "prefix+shift+h"
+resize_pane_down = "prefix+shift+j"
+resize_pane_up = "prefix+shift+k"
+resize_pane_right = "prefix+shift+l"
+
+swap_pane_left = "prefix+ctrl+h"
+swap_pane_down = "prefix+ctrl+j"
+swap_pane_up = "prefix+ctrl+k"
+swap_pane_right = "prefix+ctrl+l"
+
+resize_mode = "prefix+shift+r"
+
+split_vertical = "prefix+v"
+split_horizontal = "prefix+minus"
+close_pane = "prefix+x"
+zoom = "prefix+z"
+rename_pane = "prefix+shift+p"
+copy_mode = "prefix+["
+edit_scrollback = "prefix+e"
+
+# tmux: prefix+o cycles panes.
+cycle_pane_next = ["prefix+tab", "prefix+o"]
+cycle_pane_previous = "prefix+shift+tab"
+
+# --- tabs (tmux windows) --------------------------------------------------
+new_tab = "prefix+c"
+next_tab = "prefix+n"
+previous_tab = "prefix+p"
+switch_tab = "prefix+1..9"
+rename_tab = "prefix+shift+t"
+close_tab = "prefix+shift+x"
+move_tab_previous = "prefix+alt+h"
+move_tab_next = "prefix+alt+l"
+
+# --- workspaces (tmux sessions) -------------------------------------------
+workspace_picker = "prefix+w"
+# tmux: prefix+s chooses a session; herdr's session navigator is `goto`.
+goto = ["prefix+g", "prefix+s"]
+new_workspace = "prefix+shift+n"
+rename_workspace = "prefix+shift+w"
+close_workspace = "prefix+shift+d"
+previous_workspace = "prefix+alt+p"
+next_workspace = "prefix+alt+n"
+
+# --- worktrees ------------------------------------------------------------
+new_worktree = "prefix+shift+g"
+open_worktree = "prefix+alt+g"
+# remove_worktree stays unbound on purpose: it deletes a checkout.
+
+# --- agents ---------------------------------------------------------------
+focus_agent = "prefix+alt+1..9"
+next_agent = "prefix+alt+j"
+previous_agent = "prefix+alt+k"
+
+# --- session --------------------------------------------------------------
+# tmux: prefix+d detaches, prefix+r reloads the config.
+detach = ["prefix+d", "prefix+q"]
+reload_config = "prefix+r"
+help = "prefix+?"
+settings = "prefix+shift+s"
+toggle_sidebar = "prefix+b"
+open_notification_target = "prefix+shift+o"
+
+# --- navigate mode (plain keys, no prefix) --------------------------------
+navigate_pane_left = "h"
+navigate_pane_down = "j"
+navigate_pane_up = "k"
+navigate_pane_right = "l"
+navigate_workspace_up = "up"
+navigate_workspace_down = "down"

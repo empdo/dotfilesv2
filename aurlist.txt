@@ -2,6 +2,7 @@ claude-desktop
 curseforge
 discord-canary
 eww
+herdr-bin
 iriunwebcam-bin
 jlink
 linux-wallpaperengine-git

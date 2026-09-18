@@ -5,9 +5,9 @@ set -euo pipefail
 shopt -s dotglob nullglob
 
 DOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKGS=(hypr quickshell kitty wofi nvim gtk environment systemd easyeffects mime zsh tmux wallpapers)
+PKGS=(hypr quickshell kitty wofi nvim gtk environment systemd easyeffects mime zsh herdr tmux wallpapers)
 # Folders shared with other apps: link the files inside them, never the folder itself
-SHARED=" .config Pictures "
+SHARED=" .config .config/herdr Pictures "
 BACKUP="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 
 command -v stow >/dev/null || sudo pacman -S --needed --noconfirm stow
@@ -33,7 +33,9 @@ clear_way() { # $1 = package dir, $2 = relative path prefix ("" or "dir/")
   done
 }
 
-mkdir -p "$HOME/.config" "$HOME/Pictures"   # keep these as real folders
+mkdir -p "$HOME/.config" "$HOME/.config/herdr" "$HOME/Pictures"   # keep these as real folders
+                                            # (~/.config/herdr also holds herdr's
+                                            #  sockets, logs and session state)
 
 for pkg in "${PKGS[@]}"; do
   dir="$DOT/$pkg"

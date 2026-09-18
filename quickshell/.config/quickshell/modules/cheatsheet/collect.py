@@ -7,6 +7,7 @@ supply is a human description next to the bind itself:
 
     hyprland  hl.bind(..., { desc = "Open terminal" })    -> hyprctl binds -j
     nvim      vim.keymap.set(..., { desc = "Find files" }) -> nvim_get_keymap()
+    herdr     the action name is its own description       -> --default-config + config.toml
     tmux      the bound command is its own description     -> tmux list-keys
     kitty     kitty ships descriptions for its defaults    -> kitty +runpy
     zsh       the widget name is its own description       -> bindkey -L
@@ -20,6 +21,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from datetime import datetime, timezone
 
 CACHE = os.path.join(
@@ -28,15 +30,19 @@ CACHE = os.path.join(
 OUT = os.path.join(CACHE, "binds.json")
 
 
-def run(cmd, **kw):
-    """Run a command, returning stdout, or None if it is missing or fails."""
+def run(cmd, any_status=False, **kw):
+    """Run a command, returning stdout, or None if it is missing or fails.
+
+    `any_status` keeps stdout even when the command exits non-zero, for tools
+    that report findings on stdout and use the exit code to say "found some".
+    """
     if not shutil.which(cmd[0]):
         return None
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=30, **kw)
     except (subprocess.TimeoutExpired, OSError):
         return None
-    return p.stdout if p.returncode == 0 else None
+    return p.stdout if (any_status or p.returncode == 0) else None
 
 
 # --------------------------------------------------------------------------
@@ -186,6 +192,218 @@ def nvim():
         "icon": "\ue62b",
         "match": ["nvim", "neovim"],
         "groups": [group(k, sorted(buckets[k], key=lambda b: b["keys"])) for k in sorted(buckets, key=order)],
+    }
+
+
+# --------------------------------------------------------------------------
+# herdr
+# --------------------------------------------------------------------------
+
+# herdr is the odd one out: it has no command that prints its live keymap, so
+# this is assembled from the only two things that decide it -- `herdr
+# --default-config`, which is the installed binary's own defaults, and the
+# [keys] tables in config.toml, the single file herdr reads. `herdr config
+# check` then names the bindings the binary refused, so the sheet shows what is
+# actually active rather than what was asked for.
+#
+# herdr/.config/herdr/config.toml therefore spells out every binding it cares
+# about instead of leaning on defaults: --default-config omits a few actions
+# (copy_mode among them), and an explicit binding is one this cannot miss.
+
+HERDR_CONFIG = os.path.join(
+    os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "herdr", "config.toml"
+)
+
+# Action names are already close to prose; these are the ones where the name
+# alone would not tell you what the key does.
+HERDR_DESCS = {
+    "prefix": "Prefix key — starts every prefix binding",
+    "help": "Show the keybind help panel",
+    "settings": "Open settings",
+    "detach": "Detach, leaving the session running",
+    "reload_config": "Reload config.toml",
+    "open_notification_target": "Focus the notification target",
+    "workspace_picker": "Open the workspace picker",
+    "goto": "Open the session navigator",
+    "new_worktree": "New Git worktree from this workspace",
+    "open_worktree": "Open an existing Git worktree",
+    "remove_worktree": "Delete the worktree checkout",
+    "focus_agent": "Focus agent 1–9",
+    "next_agent": "Focus the next agent",
+    "previous_agent": "Focus the previous agent",
+    "remote_image_paste": "Paste a clipboard image (herdr --remote only)",
+    "switch_tab": "Switch to tab 1–9",
+    "switch_workspace": "Switch to workspace 1–9",
+    "move_tab_previous": "Move tab toward the front",
+    "move_tab_next": "Move tab toward the back",
+    "edit_scrollback": "Open the pane scrollback in $EDITOR",
+    "copy_mode": "Enter copy mode",
+    "resize_mode": "Enter resize mode",
+    "last_pane": "Focus the last focused pane",
+    "cycle_pane_next": "Cycle to the next pane",
+    "cycle_pane_previous": "Cycle to the previous pane",
+    "split_vertical": "Split pane vertically (side by side)",
+    "split_horizontal": "Split pane horizontally (stacked)",
+    "zoom": "Toggle pane zoom",
+    "toggle_sidebar": "Toggle the sidebar",
+}
+
+# (group, actions) -- a trailing underscore matches a family of actions.
+HERDR_GROUPS = (
+    ("Prefix", ("prefix",)),
+    ("Panes", ("focus_pane_", "swap_pane_", "resize_pane_", "resize_mode", "split_",
+               "close_pane", "zoom", "rename_pane", "copy_mode", "edit_scrollback",
+               "cycle_pane_", "last_pane")),
+    ("Tabs", ("new_tab", "rename_tab", "previous_tab", "next_tab", "move_tab_",
+              "switch_tab", "close_tab")),
+    ("Workspaces", ("workspace_picker", "goto", "new_workspace", "rename_workspace",
+                    "close_workspace", "previous_workspace", "next_workspace",
+                    "switch_workspace")),
+    ("Worktrees", ("new_worktree", "open_worktree", "remove_worktree")),
+    ("Agents", ("focus_agent", "next_agent", "previous_agent")),
+    ("Session", ("detach", "reload_config", "help", "settings", "toggle_sidebar",
+                 "open_notification_target", "remote_image_paste")),
+    ("Navigate mode (no prefix)", ("navigate_",)),
+)
+
+# Within a group, rows follow the order the actions are listed in above, and a
+# directional family reads h/j/k/l rather than alphabetically.
+HERDR_DIRS = {"left": 0, "down": 1, "up": 2, "right": 3, "previous": 4, "next": 5}
+
+HERDR_KEYS = {
+    "minus": "-", "comma": ",", "period": ".", "semicolon": ";", "quote": '"',
+    "percent": "%", "ampersand": "&", "plus": "+", "backtick": "`",
+    "esc": "Esc", "enter": "Enter", "tab": "Tab", "space": "Space",
+    "up": "↑", "down": "↓", "left": "←", "right": "→", "1..9": "1–9",
+    "ctrl": "Ctrl", "shift": "Shift", "alt": "Alt", "cmd": "Cmd", "super": "Super",
+}
+
+# Copy mode is the one part of herdr's keyboard that is not configurable, so it
+# cannot be read back from anywhere -- it is fixed in the binary and documented
+# at herdr.dev/docs/keyboard. Recheck it after a herdr upgrade.
+HERDR_COPY_MODE = (
+    (["h", "j", "k", "l"], "Move by character and line"),
+    (["w", "b", "e"], "Move by word"),
+    (["W", "B", "E"], "Move by big word"),
+    (["{", "}"], "Move by paragraph"),
+    (["Ctrl+F", "Ctrl+B"], "Page down / up"),
+    (["Ctrl+D", "Ctrl+U"], "Half page down / up"),
+    (["/", "?"], "Search forward / backward"),
+    (["n", "N"], "Next / previous match"),
+    (["v", "Space"], "Start a selection"),
+    (["y", "Enter"], "Copy the selection"),
+    (["q", "Esc"], "Leave copy mode"),
+)
+
+
+def herdr_key_token(tok):
+    if tok in HERDR_KEYS:
+        return HERDR_KEYS[tok]
+    return tok.upper() if len(tok) == 1 else tok.capitalize()
+
+
+def herdr_defaults():
+    """The installed binary's own default keymap, as action -> binding string."""
+    raw = run(["herdr", "--default-config"])
+    if raw is None:
+        return None
+    out, in_keys = {}, False
+    for line in raw.splitlines():
+        body = line.strip()
+        body = body[1:].strip() if body.startswith("#") else body
+        if body.startswith("["):          # [keys], then [[keys.command]] and on
+            in_keys = body == "[keys]"
+            continue
+        if not in_keys:
+            continue
+        # Anchored, so the prose in the comments ('type = "shell" runs detached
+        # in the background.') is not mistaken for a binding.
+        m = re.match(r'^([a-z_]+)\s*=\s*("[^"]*")\s*(?:#.*)?$', body)
+        if m:
+            out[m.group(1)] = json.loads(m.group(2))
+    return out
+
+
+def herdr_disabled():
+    """Actions `herdr config check` reports as refused, invalid or shadowed."""
+    raw = run(["herdr", "config", "check"], any_status=True) or ""
+    out = set()
+    for line in raw.splitlines():
+        if "disabled keys." in line:      # 'prefix+z: kept keys.a, disabled keys.b'
+            out.update(re.findall(r"disabled keys\.([a-z_]+)", line))
+        elif "disabling binding" in line:  # 'invalid keybinding: keys.x = "..."'
+            out.update(re.findall(r"keys\.([a-z_]+)", line))
+    return out
+
+
+def herdr():
+    defaults = herdr_defaults()
+    if defaults is None:
+        return None
+
+    user, commands = {}, []
+    try:
+        with open(HERDR_CONFIG, "rb") as f:
+            keys = tomllib.load(f).get("keys", {})
+        commands = keys.pop("command", []) or []
+        keys.pop("indexed", None)          # legacy table, superseded by switch_*
+        user = keys
+    except (OSError, tomllib.TOMLDecodeError):
+        pass                               # no config yet: defaults are the keymap
+
+    effective = dict(defaults)
+    effective.update(user)
+    for action in herdr_disabled():
+        effective.pop(action, None)
+
+    prefix = effective.get("prefix") or "ctrl+b"
+    prefix_cap = "+".join(herdr_key_token(t) for t in prefix.split("+"))
+
+    def keycaps(binding):
+        return [prefix_cap if t == "prefix" else herdr_key_token(t)
+                for t in binding.split("+")]
+
+    def desc(action):
+        if action in HERDR_DESCS:
+            return HERDR_DESCS[action]
+        text = action.replace("navigate_", "").replace("_", " ")
+        text = text[:1].upper() + text[1:]
+        return text + " (navigate mode)" if action.startswith("navigate_") else text
+
+    def slot(action):
+        """(group, sort key) for one action."""
+        for name, members in HERDR_GROUPS:
+            for i, m in enumerate(members):
+                if action == m:
+                    return name, (i, 0, action)
+                if m.endswith("_") and action.startswith(m):
+                    return name, (i, HERDR_DIRS.get(action[len(m):], 9), action)
+        return "Other", (99, 9, action)
+
+    buckets = {}
+    for action, value in sorted(effective.items(), key=lambda kv: slot(kv[0])[1]):
+        # One row per binding: an action with two shortcuts has two ways in.
+        for binding in (value if isinstance(value, list) else [value]):
+            if not binding:                # optional actions are "" by default
+                continue
+            caps = [prefix_cap] if action == "prefix" else keycaps(binding)
+            buckets.setdefault(slot(action)[0], []).append(bind(caps, desc(action)))
+
+    for c in commands:
+        key, cmd = c.get("key"), c.get("command", "")
+        if key:
+            buckets.setdefault("Custom commands", []).append(
+                bind(keycaps(key), c.get("description") or cmd))
+
+    buckets["Copy mode"] = [bind(list(k), d) for k, d in HERDR_COPY_MODE]
+
+    order = [name for name, _ in HERDR_GROUPS] + ["Custom commands", "Copy mode", "Other"]
+    return {
+        "id": "herdr",
+        "name": "herdr",
+        "icon": "",
+        "match": ["herdr"],
+        "groups": [group(n, buckets[n]) for n in order if buckets.get(n)],
     }
 
 
@@ -409,7 +627,7 @@ def zsh():
 
 # --------------------------------------------------------------------------
 
-COLLECTORS = (hyprland, nvim, tmux, kitty, zsh)
+COLLECTORS = (hyprland, nvim, herdr, tmux, kitty, zsh)
 
 
 def main():

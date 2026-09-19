@@ -280,7 +280,7 @@ Scope {
                     spacing: 12
 
                     Label {
-                        text: ""
+                        text: "\uF002"        // nf-fa-search
                         color: Modules.Theme.foreground
                         font.family: "JetBrainsMono Nerd Font"
                         font.pixelSize: 20

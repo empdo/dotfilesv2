@@ -1,177 +1,98 @@
+// VolumePopup.qml -- output, microphone, and one row per application.
+//
+// The application rows come from PipeWire's stream nodes, which AudioService
+// keeps tracked so their volumes actually read back.
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell.Services.Pipewire
+import "."
 import "../" as Modules
 
 Item {
     id: root
-    implicitWidth: 220
-    implicitHeight: 240
 
-    property var popup
-    property color textColor: Modules.Theme.foreground
+    readonly property var streams: Modules.AudioService.streams
+    readonly property int rowHeight: 44
+    readonly property int rowSpacing: 10
+    // Grow with the number of applications, but stop at five rows and scroll
+    // past that, so a busy machine cannot push the popup off the screen.
+    readonly property int shownRows: Math.min(streams.length, 5)
+    readonly property int appsHeight: streams.length === 0
+        ? 24
+        : shownRows * rowHeight + (shownRows - 1) * rowSpacing
+
+    implicitWidth: 320
+    implicitHeight: 2 * 18                       // margins
+                    + 2 * rowHeight + rowSpacing // output + input
+                    + 2 * 14 + 1                 // divider and its spacing
+                    + appsHeight
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 20
-        spacing: 8
+        anchors.margins: 18
+        spacing: root.rowSpacing
 
-        Label {
-            text: "Volume"
-            color: textColor
-            font.pixelSize: 20
-            font.bold: true
-            Layout.alignment: Qt.AlignHCenter
+        VolumeRow {
+            Layout.fillWidth: true
+            glyph: Modules.AudioService.muted ? "󰟦" : "󰟥"
+            label: "Output"
+            volume: Modules.AudioService.volume
+            muted: Modules.AudioService.muted
+            onMoved: v => Modules.AudioService.setVolume(v)
+            onMuteToggled: Modules.AudioService.toggleMute()
         }
 
-        Label {
-            Layout.alignment: Qt.AlignHCenter
-            text: Modules.AudioService.muted ? "Muted" : Math.round(Modules.AudioService.volume * 100) + "%"
-            color: Modules.Theme.foreground
-            font.pixelSize: 18
+        VolumeRow {
+            Layout.fillWidth: true
+            glyph: Modules.AudioService.sourceMuted ? "󰍭" : "󰍬"
+            label: "Input"
+            volume: Modules.AudioService.sourceVolume
+            muted: Modules.AudioService.sourceMuted
+            onMoved: v => Modules.AudioService.setNodeVolume(Modules.AudioService.source, v)
+            onMuteToggled: Modules.AudioService.toggleNodeMute(Modules.AudioService.source)
         }
 
         Rectangle {
             Layout.fillWidth: true
+            Layout.topMargin: 4
+            Layout.bottomMargin: 4
             height: 1
             color: Modules.Theme.divider
-            Layout.topMargin: 6
-            Layout.bottomMargin: 6
         }
 
-        RowLayout {
+        Label {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 8
-            Layout.topMargin: 6
-            Text {
-                id: muteIcon
-                text: Modules.AudioService.muted ? "󰟦" : "󰟥"
-                color: textColor
-                font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 14
-                Layout.minimumWidth: 20
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
-
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: Modules.AudioService.toggleMute()
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                }
-            }
-
-            Slider {
-                id: slider
-                from: 0.0
-                to: 1.0
-                stepSize: 0.01
-                Layout.preferredWidth: 140
-                value: Modules.AudioService.volume
-                onValueChanged: Modules.AudioService.setVolume(value)
-                height: 20
-                hoverEnabled: true
-
-                background: Rectangle {
-                    implicitHeight: 6
-                    radius: 3
-                    color: Modules.Theme.trough
-                    z: -1
-
-                    Rectangle {
-                        width: slider.visualPosition * parent.width
-                        height: parent.height
-                        radius: 3
-                        color: Modules.AudioService.muted ? Modules.Theme.inactive : textColor
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                        }
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: 100
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
-
-                handle: null
-            }
+            visible: root.streams.length === 0
+            text: "Nothing playing"
+            color: Modules.Theme.inactive
+            font.family: "Roboto Mono"
+            font.pixelSize: 11
+            horizontalAlignment: Text.AlignHCenter
         }
 
-        RowLayout {
+        ListView {
+            id: appList
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 8
-            Layout.topMargin: 6
-            Text {
-                id: muteIcon2
-                text: Modules.AudioService.muted ? "" : ""
-                color: textColor
-                font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 14
-                Layout.minimumWidth: 20
-                horizontalAlignment: Text.AlignHCenter
-                verticalAlignment: Text.AlignVCenter
+            Layout.fillHeight: true
+            visible: root.streams.length > 0
+            clip: true
+            spacing: root.rowSpacing
+            model: root.streams
 
-                MouseArea {
-                    anchors.fill: parent
-                    onClicked: Modules.AudioService.toggleMute()
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                }
-            }
+            delegate: VolumeRow {
+                required property var modelData
 
-            Slider {
-                id: slider2
-                from: 0.0
-                to: 1.0
-                stepSize: 0.01
-                Layout.preferredWidth: 140
-                value: Modules.AudioService.volume
-                onValueChanged: Modules.AudioService.setVolume(value)
-                height: 20
-                hoverEnabled: true
+                width: appList.width
+                glyph: modelData.audio && modelData.audio.muted
+                       ? "󰟦" : "󰟥"
+                iconSource: Modules.AudioService.nodeIcon(modelData)
+                label: Modules.AudioService.nodeLabel(modelData)
+                volume: modelData.audio ? modelData.audio.volume : 0
+                muted: modelData.audio ? modelData.audio.muted : false
 
-                background: Rectangle {
-                    implicitHeight: 6
-                    radius: 3
-                    color: Modules.Theme.trough
-                    z: -1
-
-                    Rectangle {
-                        width: slider.visualPosition * parent.width
-                        height: parent.height
-                        radius: 3
-                        color: Modules.AudioService.muted ? Modules.Theme.inactive : textColor
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            hoverEnabled: true
-                        }
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: 100
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
-                }
-
-                handle: null
-            }
-        }
-        MouseArea {
-            hoverEnabled: true
-
-            onExited: {
-                root.popup.hidePopup();
+                onMoved: v => Modules.AudioService.setNodeVolume(modelData, v)
+                onMuteToggled: Modules.AudioService.toggleNodeMute(modelData)
             }
         }
     }

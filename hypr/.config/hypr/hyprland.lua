@@ -67,7 +67,7 @@ hl.env("GTK_THEME", "Adwaita:dark")
 hl.config({
     general = {
         gaps_in  = 7,
-        gaps_out = 14,
+        gaps_out = 20,
 
         border_size = 2,
 
@@ -235,7 +235,7 @@ hl.bind(key("G"), function()
     if not ws then return end
     local sel = ws.id > 0 and tostring(ws.id) or ("name:" .. ws.name)
     bigGaps[sel] = not bigGaps[sel]
-    hl.workspace_rule({ workspace = sel, gaps_in = 5, gaps_out = bigGaps[sel] and 100 or 10 })
+    hl.workspace_rule({ workspace = sel, gaps_in = 7, gaps_out = bigGaps[sel] and 100 or 20 })
 end, { desc = "Toggle wide gaps on this workspace" })
 
 -- Keybind cheatsheet (Quickshell overlay; see ~/.config/quickshell/modules/cheatsheet)

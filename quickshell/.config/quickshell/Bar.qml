@@ -7,12 +7,11 @@ import Quickshell.Wayland
 import "."
 
 import "modules/clock"
-import "modules/connectivity"
+import "modules/media"
 import "modules/power"
-import "modules/theme"
+import "modules/settings"
 import "modules/tray"
 import "modules/volume"
-import "modules/wallpaper"
 import "modules" as Modules
 
 Scope {
@@ -66,107 +65,112 @@ Scope {
                 Item {
                     anchors.fill: parent
 
-                    // TOP: workspaces
-                    WorkspacesWidget {
-                        id: workspaces
+                    // Items are grouped into capsules (see BarSection.qml) so
+                    // the bar reads as a few groups rather than eight loose
+                    // icons. Children of a section must not set their own
+                    // anchors -- the section lays them out in a Column.
+
+                    // TOP: workspaces and the system tray
+                    BarSection {
+                        capsule: false
                         anchors.top: parent.top
+                        anchors.topMargin: 8
                         anchors.horizontalCenter: parent.horizontalCenter
-                    }
 
-                    // BELOW WORKSPACES: system tray popup
-                    ExpandableItem {
-                        id: trayExpandable
-                        barWindow: bar
-                        iconComponent: TrayIcon {}
-                        popupContent: Component {
-                            TrayPopup {
-                                onMenuOpenChanged: trayExpandable.keepOpen = menuOpen
+                        WorkspacesWidget {}
+
+                        ExpandableItem {
+                            id: trayExpandable
+                            barWindow: bar
+                            iconComponent: TrayIcon {}
+                            popupContent: Component {
+                                TrayPopup {
+                                    onMenuOpenChanged: trayExpandable.keepOpen = menuOpen
+                                }
                             }
                         }
-
-                        anchors.top: workspaces.bottom
-                        anchors.topMargin: 15
-                        anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    // ABOVE CLOCK: volume
-                    ExpandableItem {
-                        id: volumeItem
-                        barWindow: bar
-                        iconComponent: VolumeWidget {}
-                        popupContent: Component {
-                            VolumePopup {}
-                        }
-
-                        anchors.bottom: clockItem.top
+                    // CENTRE: what is playing. The whole capsule goes away
+                    // when nothing is, rather than leaving an empty one.
+                    BarSection {
+                        visible: MediaService.hasPlayers
+                        anchors.verticalCenter: parent.verticalCenter
                         anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottomMargin: 15
-                    }
 
-
-                    // BOTTOM: clock
-                    ExpandableItem {
-                        id: clockItem
-                        barWindow: bar
-                        iconComponent: ClockWidget {}
-                        popupContent: Component {
-                            CalendarPopup {}
-                        }
-
-                        anchors.bottom: powerIcon.top
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                    ExpandableItem {
-                        id: wallpaperItem 
-                        barWindow: bar
-                        iconComponent: WallpaperIcon{}
-                        popupContent: Component {
-                            WallpaperPopup{}
-                        }
-
-                        anchors.centerIn: parent
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-
-                    // BELOW WALLPAPER: light/dark toggle
-                    ThemeToggle {
-                        id: themeToggle
-                        anchors.top: wallpaperItem.bottom
-                        anchors.topMargin: 15
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-
-                    // BELOW THEME TOGGLE: wifi / bluetooth
-                    ExpandableItem {
-                        id: connectivityItem
-                        barWindow: bar
-                        iconComponent: ConnectivityWidget {}
-                        popupContent: Component {
-                            ConnectivityPopup {
-                                // Scan only while the menu is on screen, and keep
-                                // it pinned while the passphrase overlay is up.
-                                active: connectivityItem.open
-                                onHoldOpenChanged: connectivityItem.keepOpen = holdOpen
+                        ExpandableItem {
+                            id: mediaItem
+                            barWindow: bar
+                            iconComponent: MediaWidget {}
+                            popupContent: Component {
+                                MediaPopup {}
                             }
                         }
-
-                        anchors.top: themeToggle.bottom
-                        anchors.topMargin: 15
-                        anchors.horizontalCenter: parent.horizontalCenter
                     }
 
-                    ExpandableItem {
-                        id: powerIcon
-                        barWindow: bar
-                        smoothBottom: true
-                        iconComponent: PowerWidget {}
-                        popupContent: Component {
-                            PowerPopup {}
-                        }
+                    // ABOVE THE CONTROLS: the clock, on its own
+                    BarSection {
+                        capsule: false
+                        anchors.bottom: controlsSection.top
+                        anchors.bottomMargin: 14
+                        anchors.horizontalCenter: parent.horizontalCenter
 
+                        ExpandableItem {
+                            id: clockItem
+                            barWindow: bar
+                            iconComponent: ClockWidget {}
+                            popupContent: Component {
+                                CalendarPopup {}
+                            }
+                        }
+                    }
+
+                    // BOTTOM: audio, quick settings and power
+                    //
+                    // Everything here sits low enough that a popup centred on
+                    // its icon would run off the bottom of the screen, so all
+                    // three pin theirs to the bottom edge instead.
+                    BarSection {
+                        id: controlsSection
                         anchors.bottom: parent.bottom
+                        anchors.bottomMargin: 12
                         anchors.horizontalCenter: parent.horizontalCenter
-                        anchors.bottomMargin: 25
+
+                        ExpandableItem {
+                            id: volumeItem
+                            barWindow: bar
+                            smoothBottom: true
+                            iconComponent: VolumeWidget {}
+                            popupContent: Component {
+                                VolumePopup {}
+                            }
+                        }
+
+                        ExpandableItem {
+                            id: settingsItem
+                            barWindow: bar
+                            smoothBottom: true
+                            iconComponent: SettingsWidget {}
+                            popupContent: Component {
+                                SettingsPopup {
+                                    // Scan only while the menu is on screen, and
+                                    // keep it pinned while the passphrase
+                                    // overlay is up.
+                                    active: settingsItem.open
+                                    onHoldOpenChanged: settingsItem.keepOpen = holdOpen
+                                }
+                            }
+                        }
+
+                        ExpandableItem {
+                            id: powerIcon
+                            barWindow: bar
+                            smoothBottom: true
+                            iconComponent: PowerWidget {}
+                            popupContent: Component {
+                                PowerPopup {}
+                            }
+                        }
                     }
                 }
             }

@@ -1,4 +1,4 @@
-// modules/theme/ThemeToggle.qml
+// SettingsWidget.qml -- the bar icon that opens the quick settings menu.
 import QtQuick
 import QtQuick.Controls
 import "../" as Modules
@@ -15,13 +15,13 @@ Item {
         color: Modules.Theme.foreground
         font.family: "Symbols Nerd Font Mono"
         font.weight: Font.DemiBold
-        font.pixelSize: 24
+        font.pixelSize: 22
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
 
-        // sun in light mode, moon in dark mode
-        text: Modules.Theme.light ? "󰖨" : "󰖔"
+        text: "\uF013"           // nf-fa-cog
 
+        // Matches the other bar icons, which grow slightly under the pointer.
         scale: mouse.containsMouse ? 1.25 : 1.0
 
         Behavior on scale {
@@ -36,7 +36,7 @@ Item {
         id: mouse
         anchors.fill: parent
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: Modules.Theme.toggle()
+        acceptedButtons: Qt.NoButton
+        propagateComposedEvents: true
     }
 }

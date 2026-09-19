@@ -92,22 +92,109 @@ property at the top of `Launcher.qml`).
 qs ipc call launcher toggle   # what SUPER + D is bound to
 ```
 
-## Network and Bluetooth
+## Bar layout
 
-The bar item under the light/dark toggle
-(`quickshell/.config/quickshell/modules/connectivity`) shows whichever
-connection is carrying traffic, with a dot when something is connected over
-Bluetooth. Hovering it opens a menu with both radios: Wi-Fi networks with
-signal and security, and Bluetooth devices with pairing state and battery.
+The bar groups its items into four capsules (`BarSection.qml`) rather than
+spacing eight icons evenly down the edge, so it reads as a few groups:
+workspaces and the tray at the top, now playing in the middle, the clock on its
+own, and volume, quick settings and power together at the bottom. The middle
+capsule disappears entirely when nothing is playing, rather than sitting there
+empty. Children of a section are laid out in a `Column`, so they must not
+set their own anchors. The capsule is deliberately narrower than the 60px items
+— their visible glyphs are only about half that, so it stays centred on the
+icons rather than on their boxes — and sits at low opacity, enough to group
+without drawing attention.
 
-Left click a row to do the obvious thing — connect, or disconnect if it is
-already connected — and right click to forget it. Wi-Fi passphrases are asked
-for in a separate focused overlay, because a popup anchored to the bar cannot
-take keyboard focus and closes as soon as the pointer leaves it.
+Everything in the bottom capsule sets `smoothBottom`, which pins its popup to
+the bottom edge of the screen instead of centring it on its icon. They all sit
+low enough that a centred popup would be clipped.
 
-Everything goes through Quickshell's native NetworkManager and BlueZ bindings;
-nothing shells out to `nmcli` or `bluetoothctl`. Scanning and Bluetooth
-discovery run only while the menu is on screen.
+## Now playing
+
+The middle capsule shows whatever is playing over MPRIS
+(`quickshell/.config/quickshell/modules/media`). The bar icon is the album art
+itself, dimmed while paused and marked with a dot while playing; clicking it
+plays or pauses, the way the volume icon mutes. The popup has the art, track,
+a seekable progress bar and transport controls.
+
+`MediaService.qml` picks which player the bar speaks for: an explicit choice
+from the popup's player pills wins, then whatever is actually playing, then
+whatever merely has a track loaded — so a paused Spotify still beats an idle
+client. MPRIS does not push position updates, so the service polls `position`
+twice a second while something plays and exposes it as `elapsed`. Players that
+do not report a length (Firefox and Zen do not; Spotify does) simply have no
+progress bar.
+
+## Power menu
+
+Log out, sleep and shut down, from the power icon at the bottom of the bar.
+Every action takes two clicks: the popup opens on hover, so a single click
+would leave a stray mouse one twitch away from shutting the machine down. The
+first click arms an action and the label changes to `Confirm?`; it disarms
+after three seconds, when the pointer leaves the button, or when the popup
+closes.
+
+Logging out runs `hyprctl dispatch 'hl.dsp.exit()'`, not
+`systemctl --user stop hyprland.service`. The unit exists and is enabled, but
+this machine's session is started from a TTY login and the unit sits in
+`failed`, so stopping it would do nothing. Note the argument is a Lua
+dispatcher object, not a string — the config is in Lua mode, where
+`hyprctl dispatch exit` and `hyprctl dispatch '"exit"'` are both errors.
+
+## Wallpaper
+
+The Wallpaper tile in the quick settings menu opens the picker
+(`quickshell/.config/quickshell/modules/wallpaper/WallpaperPanel.qml`), and
+names whichever wallpaper is currently up — read back by watching
+`hyprpaper.conf`, which `setwallpaper.sh` rewrites on every change.
+
+The picker is its own layershell panel rather than a popup hanging off the bar,
+so it can sit on the left of the screen clear of the bar: 60px for the bar plus
+a 5mm gap, worked out from the monitor's `physicalPixelDensity` rather than
+hardcoded, so it stays 5mm on a display with a different pitch. On this machine
+that lands it at x=81. It has a border and rounded corners, drawn with a
+`ClippingRectangle` so the list and its fades are clipped to them.
+
+Clicking a wallpaper applies it and closes the panel; Escape closes it once the
+panel has been clicked (its keyboard focus is `OnDemand`, so it does not swallow
+typing everywhere else while open), and the tile toggles it.
+
+## Quick settings
+
+The gear in the bar, under the volume icon
+(`quickshell/.config/quickshell/modules/settings`), opens a menu with the
+quick settings across the top — theme and wallpaper, both a choice rather than
+something that is on or off, so neither has a switch — and the two device lists
+below, Network on the left and Bluetooth on the right. Each list's radio switch sits beside its heading, next to what it
+actually controls.
+
+The wired connection is the first row of the Network list. It sits outside the
+scrolling area, so a long list of access points never pushes the connection you
+are actually using offscreen, and it is display-only: wired comes up on its own
+and clicking could only ever drop it by accident.
+
+Left click any other row to do the obvious thing — connect, or disconnect if it
+is already connected — and right click to forget it. Wi-Fi passphrases are
+asked for in a separate focused overlay
+(`modules/connectivity/WifiPrompt.qml`), because a popup anchored to the bar
+cannot take keyboard focus and closes as soon as the pointer leaves it.
+
+The menu is pinned to the bottom edge of the screen (`smoothBottom`, the same
+treatment the power popup gets) rather than centred on its icon, which sits too
+low in the bar for a panel this tall to be centred without being clipped.
+
+Connectivity itself lives in `modules/connectivity`: `ConnectivityService.qml`
+is the single source of truth, and `NetworkList.qml` / `BluetoothList.qml` are
+the two lists. Everything goes through Quickshell's native NetworkManager and
+BlueZ bindings; nothing shells out to `nmcli` or `bluetoothctl`. Scanning and
+Bluetooth discovery run only while the menu is on screen — discovery is
+debounced, because BlueZ rejects start/stop calls that land on top of each
+other.
+
+One gotcha worth knowing when editing these files: Nerd Font glyphs in the
+private-use range are easy to lose in transit and leave behind an empty string,
+which renders as a blank gap rather than an error. The ones below U+F900 are
+written as `\uXXXX` escapes for that reason.
 
 ## Keybind cheatsheet
 

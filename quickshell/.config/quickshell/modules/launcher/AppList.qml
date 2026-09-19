@@ -98,7 +98,7 @@ Item {
                     Label {
                         anchors.centerIn: parent
                         visible: parent.iconSource === ""
-                        text: ""
+                        text: "\uF1B2"        // nf-fa-cube, a stand-in app icon
                         color: Modules.Theme.inactive
                         font.family: "JetBrainsMono Nerd Font"
                         font.pixelSize: 22
@@ -159,7 +159,7 @@ Item {
 
                 Label {
                     visible: row.modelData.runInTerminal
-                    text: ""
+                    text: "\uF120"        // nf-fa-terminal
                     color: Modules.Theme.inactive
                     font.family: "JetBrainsMono Nerd Font"
                     font.pixelSize: 14
@@ -191,7 +191,7 @@ Item {
 
         Label {
             Layout.alignment: Qt.AlignHCenter
-            text: ""
+            text: "\uF002"        // nf-fa-search
             color: Modules.Theme.inactive
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 34

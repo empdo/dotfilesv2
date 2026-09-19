@@ -5,7 +5,7 @@ set -euo pipefail
 shopt -s dotglob nullglob
 
 DOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PKGS=(hypr quickshell kitty wofi nvim gtk environment systemd easyeffects mime zsh herdr tmux wallpapers)
+PKGS=(hypr quickshell kitty nvim gtk environment systemd easyeffects mime zsh herdr tmux wallpapers)
 # Folders shared with other apps: link the files inside them, never the folder itself
 SHARED=" .config .config/herdr Pictures "
 BACKUP="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"

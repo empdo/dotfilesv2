@@ -64,6 +64,7 @@ pipewire-pulse
 pipewire-zeroconf
 protobuf
 protontricks
+python-matplotlib
 qt5-graphicaleffects
 qtcreator
 rofi

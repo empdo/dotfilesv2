@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import "."
 
 import "modules/clock"
+import "modules/connectivity"
 import "modules/power"
 import "modules/theme"
 import "modules/tray"
@@ -131,6 +132,25 @@ Scope {
                     ThemeToggle {
                         id: themeToggle
                         anchors.top: wallpaperItem.bottom
+                        anchors.topMargin: 15
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
+
+                    // BELOW THEME TOGGLE: wifi / bluetooth
+                    ExpandableItem {
+                        id: connectivityItem
+                        barWindow: bar
+                        iconComponent: ConnectivityWidget {}
+                        popupContent: Component {
+                            ConnectivityPopup {
+                                // Scan only while the menu is on screen, and keep
+                                // it pinned while the passphrase overlay is up.
+                                active: connectivityItem.open
+                                onHoldOpenChanged: connectivityItem.keepOpen = holdOpen
+                            }
+                        }
+
+                        anchors.top: themeToggle.bottom
                         anchors.topMargin: 15
                         anchors.horizontalCenter: parent.horizontalCenter
                     }

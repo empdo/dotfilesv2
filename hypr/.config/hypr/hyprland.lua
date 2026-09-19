@@ -25,7 +25,7 @@ hl.monitor({ output = "HDMI-A-3", mode = "1920x1080@60", position = "2560x0", sc
 
 local terminal    = "kitty"
 local fileManager = "dolphin"
-local menu        = "wofi --show drun"
+local menu        = "qs ipc call launcher toggle"   -- Quickshell overlay; see ~/.config/quickshell/modules/launcher
 
 
 -------------------
@@ -43,7 +43,8 @@ end)
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
 
-hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "20")
+hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("HYPRCURSOR_SIZE", "12")
 hl.env("GTK_THEME", "Adwaita:dark")
 

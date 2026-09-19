@@ -1,6 +1,6 @@
 # dotfiles
 
-Arch + Hyprland setup: Quickshell bar, hyprpaper, wofi (Catppuccin Mocha), kitty, nvim, zsh/Oh My Zsh, herdr.
+Arch + Hyprland setup: Quickshell bar and app launcher, hyprpaper, kitty, nvim, zsh/Oh My Zsh, herdr.
 Managed with [GNU Stow](https://www.gnu.org/software/stow/) — each folder is a package that mirrors `$HOME`.
 
 ## New machine
@@ -66,10 +66,53 @@ herdr server reload-config  # apply without restarting (or press prefix + r)
 tmux is still installed and still stowed, it just no longer starts on its own —
 run `tmux` and the old `~/.tmux.conf` (same `ctrl+s` prefix) applies as before.
 
+## App launcher
+
+`SUPER + D` opens a Quickshell overlay in place of wofi
+(`quickshell/.config/quickshell/modules/launcher`). It reads the XDG desktop
+entries directly through Quickshell's `DesktopEntries`, so there is no cache to
+rebuild — installing an app makes it show up.
+
+Typing ranks rather than merely filters: an exact name beats a prefix, which
+beats a word-boundary hit inside the name, which beats scattered letters
+(`vsc` finds Visual Studio Code). Keywords, generic name and comment are
+searched too, at descending weight. Desktop actions ("New Private Window") join
+the results once you type, and stay out of the resting list.
+
+Launch counts live in `~/.local/state/quickshell/by-shell/<id>/launcher.json`
+and nudge the ranking, so the apps you actually use rise to the top — with an
+empty query the list *is* that history. Typing a name still beats a favourite
+that only fuzzy-matches.
+
+`↑↓` or `ctrl+j/k` select, `⏎` launches, `⇥` completes to the selected name,
+`Esc` closes. Entries marked `Terminal=true` are opened in kitty (the `terminal`
+property at the top of `Launcher.qml`).
+
+```bash
+qs ipc call launcher toggle   # what SUPER + D is bound to
+```
+
+## Network and Bluetooth
+
+The bar item under the light/dark toggle
+(`quickshell/.config/quickshell/modules/connectivity`) shows whichever
+connection is carrying traffic, with a dot when something is connected over
+Bluetooth. Hovering it opens a menu with both radios: Wi-Fi networks with
+signal and security, and Bluetooth devices with pairing state and battery.
+
+Left click a row to do the obvious thing — connect, or disconnect if it is
+already connected — and right click to forget it. Wi-Fi passphrases are asked
+for in a separate focused overlay, because a popup anchored to the bar cannot
+take keyboard focus and closes as soon as the pointer leaves it.
+
+Everything goes through Quickshell's native NetworkManager and BlueZ bindings;
+nothing shells out to `nmcli` or `bluetoothctl`. Scanning and Bluetooth
+discovery run only while the menu is on screen.
+
 ## Keybind cheatsheet
 
-`SUPER + /` opens a Quickshell overlay: first a menu of apps, then that app's
-keybinds. It covers Hyprland, Neovim, herdr, tmux, kitty and zsh.
+`SUPER + ALT + K` opens a Quickshell overlay: first a menu of apps, then that
+app's keybinds. It covers Hyprland, Neovim, herdr, tmux, kitty and zsh.
 
 `quickshell/.config/quickshell/modules/cheatsheet/collect.py` asks each app for
 its *live* binds (`hyprctl binds -j`, `nvim_get_keymap`, `tmux list-keys`, and so

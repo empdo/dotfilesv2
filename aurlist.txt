@@ -1,3 +1,5 @@
+bibata-cursor-git
+claude-code
 claude-desktop
 curseforge
 discord-canary

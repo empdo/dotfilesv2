@@ -20,6 +20,34 @@ Item {
     readonly property int rowHeight: 52
     readonly property int pageRows: Math.max(1, Math.floor(list.height / rowHeight))
 
+    // Scrolls the view so the row at `index` is on screen with a row's worth of
+    // context past it, and does nothing at all when it already is.
+    //
+    // Only the keyboard calls this. The list used to keep the selected row
+    // inside that band by itself (`highlightRangeMode: ApplyRange`), which
+    // meant *any* selection change scrolled -- including one made by hovering,
+    // so putting the pointer on the top or bottom row shoved the list out from
+    // under it. Scrolling is now something navigation does deliberately, and a
+    // hover is not navigation: the pointer is already on the row it means.
+    function reveal(index) {
+        if (root.entries.length === 0)
+            return;
+
+        const step = root.rowHeight + list.spacing;
+        const top = index * step - root.rowHeight;
+        const bottom = index * step + root.rowHeight + root.rowHeight;
+        const max = Math.max(0, list.contentHeight - list.height);
+
+        if (top < list.contentY)
+            list.contentY = Math.max(0, top);
+        else if (bottom > list.contentY + list.height)
+            list.contentY = Math.min(max, bottom - list.height);
+    }
+
+    // A fresh set of rows starts at the top rather than keeping a scroll
+    // position that belonged to the old ones.
+    onEntriesChanged: root.reveal(root.selected)
+
     ListView {
         id: list
         anchors.fill: parent
@@ -29,9 +57,9 @@ Item {
         model: root.entries
         currentIndex: root.selected
 
-        highlightRangeMode: ListView.ApplyRange
-        preferredHighlightBegin: root.rowHeight
-        preferredHighlightEnd: height - root.rowHeight
+        // Deliberately not ApplyRange: the view scrolls when `reveal` says so
+        // and at no other time, so hovering never moves it.
+        highlightRangeMode: ListView.NoHighlightRange
         highlightMoveDuration: 90
 
         highlight: Rectangle {
@@ -135,7 +163,9 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 // Hovering moves the cursor, so mouse and keyboard never disagree
-                // about which row Enter would copy.
+                // about which row Enter would copy. It cannot scroll the view --
+                // see `reveal` above -- so the row under the pointer stays the
+                // row under the pointer.
                 onPositionChanged: root.hovered(row.index)
                 onClicked: root.activated(row.index)
             }

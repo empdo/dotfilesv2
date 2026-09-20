@@ -99,17 +99,24 @@ Scope {
         if (!entry)
             return;
         ClipboardService.remove(entry);
-        root.selected = Math.max(0, Math.min(root.selected, root.results.length - 1));
+        root.select(Math.max(0, Math.min(root.selected, root.results.length - 1)));
     }
 
     function move(delta) {
         const n = root.results.length;
         if (n === 0)
             return;
-        root.selected = Math.max(0, Math.min(n - 1, root.selected + delta));
+        root.select(Math.max(0, Math.min(n - 1, root.selected + delta)));
     }
 
-    onQueryChanged: selected = 0
+    // Moving the cursor with the keyboard scrolls the list to follow it.
+    // Hovering deliberately does not -- see the list's `reveal`.
+    function select(index) {
+        root.selected = index;
+        list.reveal(index);
+    }
+
+    onQueryChanged: root.select(0)
 
     // The quick settings tile cannot reach into this window, so it asks the
     // service and this listens.
@@ -226,9 +233,9 @@ Scope {
                             } else if (event.key === Qt.Key_PageUp) {
                                 root.move(-list.pageRows);
                             } else if (event.key === Qt.Key_Home && ctrl) {
-                                root.selected = 0;
+                                root.select(0);
                             } else if (event.key === Qt.Key_End && ctrl) {
-                                root.selected = Math.max(0, root.results.length - 1);
+                                root.select(Math.max(0, root.results.length - 1));
                             } else {
                                 return;   // hand everything else to text editing
                             }

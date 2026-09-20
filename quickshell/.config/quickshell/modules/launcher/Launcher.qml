@@ -221,11 +221,18 @@ Scope {
             return;
         // Clamped rather than wrapped: holding Down should settle at the end of
         // the list instead of silently jumping back to the top.
-        root.selected = Math.max(0, Math.min(n - 1, root.selected + delta));
+        root.select(Math.max(0, Math.min(n - 1, root.selected + delta)));
+    }
+
+    // Moving the cursor with the keyboard scrolls the list to follow it.
+    // Hovering deliberately does not -- see the list's `reveal`.
+    function select(index) {
+        root.selected = index;
+        list.reveal(index);
     }
 
     // Typing changes what is on offer, so the cursor goes back to the best match.
-    onQueryChanged: selected = 0
+    onQueryChanged: root.select(0)
 
     // --- the overlay ---------------------------------------------------------
 
@@ -326,9 +333,9 @@ Scope {
                             } else if (event.key === Qt.Key_PageUp) {
                                 root.move(-list.pageRows);
                             } else if (event.key === Qt.Key_Home && ctrl) {
-                                root.selected = 0;
+                                root.select(0);
                             } else if (event.key === Qt.Key_End && ctrl) {
-                                root.selected = Math.max(0, root.results.length - 1);
+                                root.select(Math.max(0, root.results.length - 1));
                             } else if (event.key === Qt.Key_Tab) {
                                 // Complete to the selected app's name, so Tab then
                                 // typing narrows within one app's actions.

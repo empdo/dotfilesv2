@@ -85,7 +85,18 @@ empty query the list *is* that history. Typing a name still beats a favourite
 that only fuzzy-matches.
 
 `↑↓` or `ctrl+j/k` select, `⏎` launches, `⇥` completes to the selected name,
-`Esc` closes. Entries marked `Terminal=true` are opened in kitty (the `terminal`
+`Esc` closes.
+
+Hovering a row selects it, so the mouse and the keyboard never disagree about
+which row `⏎` would take — but hovering never *scrolls*. The list used to keep
+the selected row inside a band one row in from each edge
+(`highlightRangeMode: ApplyRange`), which meant any selection change moved the
+view, hovering included: putting the pointer on the top or bottom row shoved
+the list out from under it, which slid a new row under the pointer, which
+selected, which scrolled, until the list had dragged itself to one end. The
+view now scrolls only when `reveal()` says so, and only the keyboard calls it —
+a hover is not navigation, since the pointer is already on the row it means.
+The clipboard list does the same thing for the same reason. Entries marked `Terminal=true` are opened in kitty (the `terminal`
 property at the top of `Launcher.qml`).
 
 ```bash

@@ -104,34 +104,34 @@ Item {
 
                 // Themed icon when the icon theme has one, otherwise a glyph, so
                 // an entry with a broken Icon= line still lines up with the rest.
-                Item {
-                    Layout.preferredWidth: 34
-                    Layout.preferredHeight: 34
+                //Item {
+                //    Layout.preferredWidth: 34
+                //    Layout.preferredHeight: 34
 
-                    readonly property string iconSource:
-                        Quickshell.iconPath(row.modelData.icon, true)
+                //    readonly property string iconSource:
+                //        Quickshell.iconPath(row.modelData.icon, true)
 
-                    // implicitSize rather than anchors.fill: IconImage derives the
-                    // texture's sourceSize from its laid-out size, and while the
-                    // layout is still settling that can ask the SVG renderer for an
-                    // absurd buffer ("requested buffer size is too big").
-                    IconImage {
-                        anchors.centerIn: parent
-                        implicitSize: 34
-                        visible: parent.iconSource !== ""
-                        source: parent.iconSource
-                        asynchronous: true
-                    }
+                //    // implicitSize rather than anchors.fill: IconImage derives the
+                //    // texture's sourceSize from its laid-out size, and while the
+                //    // layout is still settling that can ask the SVG renderer for an
+                //    // absurd buffer ("requested buffer size is too big").
+                //    IconImage {
+                //        anchors.centerIn: parent
+                //        implicitSize: 34
+                //        visible: parent.iconSource !== ""
+                //        source: parent.iconSource
+                //        asynchronous: true
+                //    }
 
-                    Label {
-                        anchors.centerIn: parent
-                        visible: parent.iconSource === ""
-                        text: "\uF1B2"        // nf-fa-cube, a stand-in app icon
-                        color: Modules.Theme.inactive
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 22
-                    }
-                }
+                //    Label {
+                //        anchors.centerIn: parent
+                //        visible: parent.iconSource === ""
+                //        text: "\uF1B2"        // nf-fa-cube, a stand-in app icon
+                //        color: Modules.Theme.inactive
+                //        font.family: "JetBrainsMono Nerd Font"
+                //        font.pixelSize: 22
+                //    }
+                //}
 
                 ColumnLayout {
                     Layout.fillWidth: true

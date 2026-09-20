@@ -14,6 +14,10 @@ Item {
 
     property bool smoothBottom
 
+    // Set by a bar that runs along the bottom of the screen: the popup then
+    // grows upwards out of the bar instead of sideways out of it.
+    property bool horizontal
+
     // set this to hold the popup open, e.g. while a context menu from it is showing
     property bool keepOpen: false
 
@@ -84,12 +88,25 @@ Item {
                     RoundedPopupCard {
                         id: card
                         smoothBottom: root.smoothBottom
+                        horizontal: root.horizontal
 
                         // Animate the popup appearing
                         width: popup.visible ? implicitWidth : 0
                         height: popup.visible ? implicitHeight : 0
 
+                        // The card grows out of the bar, so what animates is
+                        // its depth -- which axis that is depends on which
+                        // edge the bar is on.
                         Behavior on width {
+                            enabled: !root.horizontal
+                            NumberAnimation {
+                                duration: 200
+                                easing.type: Easing.OutCubic
+                            }
+                        }
+
+                        Behavior on height {
+                            enabled: root.horizontal
                             NumberAnimation {
                                 duration: 200
                                 easing.type: Easing.OutCubic
@@ -110,22 +127,27 @@ Item {
 
         anchor.onAnchoring: {
             const winItem = barWindow.contentItem;
+            const pos = root.mapToItem(winItem, 0, 0);
 
-            const center = root.mapToItem(winItem, root.width / 2, root.height / 2);
-
-            anchor.rect.x = root.barWindow.width - 1;
-
-            if (root.smoothBottom) {
-                anchor.rect.y = winItem.height - popup.implicitHeight;
+            // Clamped to the screen along the bar: items near either end --
+            // the notification bell and the quick settings menu are the big
+            // ones -- would otherwise have their popup cut off. The card is a
+            // panel rather than a speech bubble, so it does not have to stay
+            // lined up with the icon that opened it.
+            if (root.horizontal) {
+                const centred = pos.x + (root.width - popup.implicitWidth) / 2;
+                anchor.rect.x = Math.max(0, Math.min(centred, winItem.width - popup.implicitWidth));
+                // Just clear of the bar's top edge, growing upwards.
+                anchor.rect.y = -popup.implicitHeight + 1;
             } else {
-                const pos = root.mapToItem(winItem, 0, 0);
-                const centred = pos.y + (root.height - popup.implicitHeight) / 2;
-                // Clamped to the screen: items near either end of the bar --
-                // the notification bell is the tall one -- would otherwise
-                // have the top or bottom of their popup cut off. The card is
-                // a panel rather than a speech bubble, so it does not have to
-                // stay lined up with the icon that opened it.
-                anchor.rect.y = Math.max(0, Math.min(centred, winItem.height - popup.implicitHeight));
+                anchor.rect.x = root.barWindow.width - 1;
+
+                if (root.smoothBottom) {
+                    anchor.rect.y = winItem.height - popup.implicitHeight;
+                } else {
+                    const centred = pos.y + (root.height - popup.implicitHeight) / 2;
+                    anchor.rect.y = Math.max(0, Math.min(centred, winItem.height - popup.implicitHeight));
+                }
             }
         }
     }

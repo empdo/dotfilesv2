@@ -1,4 +1,13 @@
 // RoundedPopupCard.qml
+//
+// The panel a bar popup is drawn in: a rounded card with two concave fillets
+// along the edge it is attached to, so it reads as growing out of the bar
+// rather than floating beside it.
+//
+// The path is written once, in the bar's own terms -- `u` is depth away from
+// the bar, `v` runs along it -- and `point()` turns that into canvas
+// coordinates for whichever edge the bar is on. A horizontal bar is the same
+// shape a quarter turn round, so there is one path rather than two.
 import QtQuick
 import "modules" as Modules
 
@@ -9,15 +18,30 @@ Item {
 
     property bool smoothBottom
 
+    // Set by a bar that runs along the bottom of the screen: the card is then
+    // attached along its own bottom edge and grows upwards.
+    property bool horizontal
+
     property color backgroundColor: Modules.Theme.background
     property color borderColor: Modules.Theme.foreground
     property real outerRadius: 18
     property real innerRadius: 42
     property real padding: 80
 
-    // Card grows with content + padding
-    implicitWidth: Math.max(contentItem.childrenRect.width, 10)
-    implicitHeight: smoothBottom ? Math.max(contentItem.childrenRect.height + padding - innerRadius, 10) : Math.max(contentItem.childrenRect.height + padding, 10)
+    // Depth is measured away from the bar and takes the content's own size;
+    // the padding is spent along the bar, half at each end, which is what
+    // leaves room for the fillets.
+    readonly property real contentDepth:
+        horizontal ? contentItem.childrenRect.height : contentItem.childrenRect.width
+    readonly property real contentExtent:
+        horizontal ? contentItem.childrenRect.width : contentItem.childrenRect.height
+
+    readonly property real depth: Math.max(contentDepth, 10)
+    readonly property real extent: Math.max(
+        contentExtent + (smoothBottom ? padding - innerRadius : padding), 10)
+
+    implicitWidth: horizontal ? extent : depth
+    implicitHeight: horizontal ? depth : extent
 
     // Force canvas repaint during animated size changes
     onWidthChanged: canvas.requestPaint()
@@ -26,6 +50,7 @@ Item {
     // ...and when the palette changes
     onBackgroundColorChanged: canvas.requestPaint()
     onBorderColorChanged: canvas.requestPaint()
+    onHorizontalChanged: canvas.requestPaint()
 
     Canvas {
         id: canvas
@@ -38,26 +63,41 @@ Item {
             const OR = root.outerRadius;
             const IR = root.innerRadius;
 
-            ctx.strokeStyle = root.borderColor;
+            // How far the card reaches away from the bar, and how far it runs
+            // along it, in canvas units.
+            const D = root.horizontal ? h : w;
+            const E = root.horizontal ? w : h;
+
+            // (depth, along) -> (x, y). Vertical bars sit on the left, so
+            // depth is x. Horizontal bars sit at the bottom, so depth is
+            // measured upwards from the bottom edge.
+            const point = (u, v) => root.horizontal ? [v, h - u] : [u, v];
+            const moveTo = (u, v) => { const p = point(u, v); ctx.moveTo(p[0], p[1]); };
+            const lineTo = (u, v) => { const p = point(u, v); ctx.lineTo(p[0], p[1]); };
+            const curveTo = (cu, cv, u, v) => {
+                const c = point(cu, cv);
+                const p = point(u, v);
+                ctx.quadraticCurveTo(c[0], c[1], p[0], p[1]);
+            };
 
             ctx.clearRect(0, 0, w, h);
             ctx.beginPath();
 
-            ctx.moveTo(0, 0);
-            ctx.quadraticCurveTo(0, IR, IR, IR);
+            moveTo(0, 0);
+            curveTo(0, IR, IR, IR);
 
-            ctx.lineTo(w - OR, IR);
-            ctx.quadraticCurveTo(w, IR, w, IR + OR);
+            lineTo(D - OR, IR);
+            curveTo(D, IR, D, IR + OR);
 
             if (root.smoothBottom) {
-                ctx.lineTo(w, h);
-                ctx.lineTo(0, h);
+                lineTo(D, E);
+                lineTo(0, E);
             } else {
-                ctx.lineTo(w, h - IR - OR);
-                ctx.quadraticCurveTo(w, h - IR, w - OR, h - IR);
+                lineTo(D, E - IR - OR);
+                curveTo(D, E - IR, D - OR, E - IR);
 
-                ctx.lineTo(IR, h - IR);
-                ctx.quadraticCurveTo(0, h - IR, 0, h);
+                lineTo(IR, E - IR);
+                curveTo(0, E - IR, 0, E);
             }
 
             ctx.fillStyle = root.backgroundColor;
@@ -67,28 +107,32 @@ Item {
             ctx.stroke();
 
             if (root.smoothBottom) {
+                // Hide the border along the screen edge the card is flush with.
                 ctx.beginPath();
                 ctx.strokeStyle = root.backgroundColor;
                 ctx.lineWidth = 2;
 
-                ctx.moveTo(0, h);
-                ctx.lineTo(w, h);
+                const a = point(0, E);
+                const b = point(D, E);
+                ctx.moveTo(a[0], a[1]);
+                ctx.lineTo(b[0], b[1]);
 
                 ctx.stroke();
             }
         }
     }
 
-    // SAFE area inside the curved shape
+    // SAFE area inside the curved shape: inset along the bar, where the
+    // fillets eat into the card, and not at all across its depth.
     Item {
         id: contentArea
         anchors {
-            top: parent.top
-            bottom: parent.bottom
-
-            // TOP MUST ACCOUNT FOR INNER RADIUS
-            topMargin: root.padding / 2
-
+            top: root.horizontal ? undefined : parent.top
+            bottom: root.horizontal ? undefined : parent.bottom
+            left: root.horizontal ? parent.left : undefined
+            right: root.horizontal ? parent.right : undefined
+            leftMargin: root.horizontal ? root.padding / 2 : 0
+            topMargin: root.horizontal ? 0 : root.padding / 2
         }
     }
 

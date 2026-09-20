@@ -1,67 +1,59 @@
 import QtQuick
-import QtQuick.Shapes
 import Quickshell
 import Quickshell.Hyprland
 import "modules" as Modules
 
 Item {
-    // size to the content instead of filling the whole bar,
-    // so things can be anchored below it
-    implicitWidth: 60
-    implicitHeight: content.implicitHeight
+    id: root
 
-    Column {
-        id: content
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: 12
+    // Set by a bar that runs along the bottom of the screen.
+    property bool horizontal: false
 
-        // Arch logo
-//        Text {
-//            text: "󰣇"
-//            color: Modules.Theme.foreground
-//            rightPadding: 5
-//            topPadding: 8
-//            font.pixelSize: 30
-//            horizontalAlignment: Text.AlignHCenter
-//            anchors.horizontalCenter: parent.horizontalCenter
-//        }
+    property real thickness: 60
 
-        // Workspaces background
-        Rectangle {
-            id: repeaterBackground
-            color: Modules.Theme.background
-            radius: 20
-            border.color: Modules.Theme.foreground
-            border.width: 1
-            width: 28
-            height: repeaterRow.implicitHeight + 16
-            anchors.horizontalCenter: parent.horizontalCenter
-            clip: true
+    // Size to the content instead of filling the whole bar, so things can be
+    // anchored past it.
+    implicitWidth: horizontal ? pill.implicitWidth : thickness
+    implicitHeight: horizontal ? thickness : pill.implicitHeight
 
-            Column {
-                id: repeaterRow
-                anchors.centerIn: parent
-                spacing: 8
-                padding: 8
+    Rectangle {
+        id: pill
+        anchors.centerIn: parent
 
-                Repeater {
-                    model: Hyprland.workspaces
+        color: Modules.Theme.background
+        radius: 20
+        border.color: Modules.Theme.foreground
+        border.width: 1
+        clip: true
 
-                    delegate: Rectangle {
-                        width: 12
-                        height: 12
-                        radius: 6
-                        color: modelData.active ? Modules.Theme.foreground : "transparent"
-                        border.color: Modules.Theme.foreground
-                        border.width: 2
-                        anchors.horizontalCenter: parent.horizontalCenter
+        implicitWidth: root.horizontal ? dots.implicitWidth + 16 : 28
+        implicitHeight: root.horizontal ? 28 : dots.implicitHeight + 16
+        width: implicitWidth
+        height: implicitHeight
 
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: modelData.activate()
-                            hoverEnabled: true
-                        }
+        Grid {
+            id: dots
+            anchors.centerIn: parent
+            spacing: 8
+            columns: root.horizontal ? 100 : 1
+
+            Repeater {
+                model: Hyprland.workspaces
+
+                delegate: Rectangle {
+                    required property var modelData
+
+                    width: 12
+                    height: 12
+                    radius: 6
+                    color: modelData.active ? Modules.Theme.foreground : "transparent"
+                    border.color: Modules.Theme.foreground
+                    border.width: 2
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: modelData.activate()
                     }
                 }
             }

@@ -266,7 +266,7 @@ Scope {
             anchors.centerIn: parent
             width: Math.min(parent.width - 120, 760)
             height: Math.min(parent.height - 120, 560)
-            radius: 18
+            radius: 10
             color: Modules.Theme.background
             border.width: 1
             border.color: Modules.Theme.foreground

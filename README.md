@@ -1,6 +1,6 @@
 # dotfiles
 
-Arch + Hyprland setup: Quickshell bar and app launcher, hyprpaper, kitty, nvim, zsh/Oh My Zsh, herdr.
+Arch + Hyprland setup: Quickshell bar, app launcher, notifications and clipboard, hyprpaper, kitty, nvim, zsh/Oh My Zsh, herdr.
 Managed with [GNU Stow](https://www.gnu.org/software/stow/) — each folder is a package that mirrors `$HOME`.
 
 ## New machine
@@ -95,9 +95,10 @@ qs ipc call launcher toggle   # what SUPER + D is bound to
 ## Bar layout
 
 The bar groups its items into four capsules (`BarSection.qml`) rather than
-spacing eight icons evenly down the edge, so it reads as a few groups:
-workspaces and the tray at the top, now playing in the middle, the clock on its
-own, and volume, quick settings and power together at the bottom. The middle
+spacing ten icons evenly down the edge, so it reads as a few groups:
+the cat, workspaces, the tray and the notification bell at the top, now playing
+in the middle, the clock on its own, and volume, quick settings and power
+together at the bottom. The middle
 capsule disappears entirely when nothing is playing, rather than sitting there
 empty. Children of a section are laid out in a `Column`, so they must not
 set their own anchors. The capsule is deliberately narrower than the 60px items
@@ -108,6 +109,35 @@ without drawing attention.
 Everything in the bottom capsule sets `smoothBottom`, which pins its popup to
 the bottom edge of the screen instead of centring it on its icon. They all sit
 low enough that a centred popup would be clipped.
+
+## The cat
+
+The drawing at the top of the bar, where the Arch logo used to be. It is drawn
+in Krita on a vector layer and exported to
+`quickshell/.config/quickshell/icon/cat.svg`, which stays in the repo as the
+editable source.
+
+What the bar actually draws is `modules/components/CatIcon.qml`: the same
+artwork as Qt `Shape` geometry rather than a picture of it, so its lines are
+filled with `Theme.foreground` and follow light and dark mode -- cross-fade
+included, since it inherits the palette's own colour animation. Recolouring a
+plain `Image` is the thing this avoids: Qt has no way to tint one that survives
+a light theme, and it will not load an SVG from a `data:` URL, so rewriting the
+colour into the file at runtime is not open either.
+
+Qt's own converter does the work, and the file says at the top which three
+substitutions to reapply afterwards:
+
+```bash
+/usr/lib/qt6/bin/svgtoqml icon/cat.svg CatIcon.qml
+```
+
+`lineWidth` is in screen pixels and is converted back into the drawing's units
+inside the component, so the cat keeps the same weight of line at any size.
+This matters more than it sounds: Krita exported the strokes at 1.44 units in a
+345.6 viewBox, which at bar size works out to a tenth of a pixel and renders as
+nothing at all. 1.6px at 30px across is what the bar uses; much past 2.4 and
+the eyes close up.
 
 ## Now playing
 
@@ -120,7 +150,17 @@ a seekable progress bar and transport controls.
 `MediaService.qml` picks which player the bar speaks for: an explicit choice
 from the popup's player pills wins, then whatever is actually playing, then
 whatever merely has a track loaded — so a paused Spotify still beats an idle
-client. MPRIS does not push position updates, so the service polls `position`
+client.
+
+A player is identified by its **bus name**, not by `uniqueId`. Despite the
+name, `uniqueId` is a per-connection counter and every player on this machine
+reports `1`, so comparing on it made every pill in the popup believe it was the
+current one, and picking any of them landed on whichever player happened to be
+first in the list. The bus name is genuinely distinct
+(`org.mpris.MediaPlayer2.spotify` against
+`org.mpris.MediaPlayer2.firefox.instance_1_137`) and still keeps the choice
+free of a dangling object reference: a client that restarts simply stops
+matching, and the fallbacks take over again. MPRIS does not push position updates, so the service polls `position`
 twice a second while something plays and exposes it as `elapsed`. Players that
 do not report a length (Firefox and Zen do not; Spotify does) simply have no
 progress bar.
@@ -195,6 +235,157 @@ One gotcha worth knowing when editing these files: Nerd Font glyphs in the
 private-use range are easy to lose in transit and leave behind an empty string,
 which renders as a blank gap rather than an error. The ones below U+F900 are
 written as `\uXXXX` escapes for that reason.
+
+## Notifications
+
+Quickshell is the notification daemon
+(`quickshell/.config/quickshell/modules/notifications`), in place of dunst.
+Toasts stack in the top right — the bar owns the left edge and its popups fly
+out across it — newest on top, sliding in from the edge and back out again.
+
+A toast times itself out after 5s (low) or 7s (normal); hovering it stops the
+clock, so nothing can disappear mid-sentence, and moving away starts the wait
+over rather than resuming it. Critical notifications never expire on their own,
+ignore do not disturb, and get a coloured stripe and border — `Theme.urgent` is
+the only colour in an otherwise monochrome palette, spent here because an
+urgency nothing shows is an urgency not worth setting.
+
+Left click runs the notification's default action if it has one (the thing that
+opens the chat window the message came from), otherwise just dismisses the
+toast; right click drops it from the history too, and so does the cross that
+appears on hover. Any other actions the app offers are buttons on the card.
+
+The bell at the top of the bar, under the tray, holds the history: the last 50,
+with what they came from and how long ago. The badge counts what has arrived
+since the list was last opened — a standing count of 50 tells you nothing.
+Clicking the bell toggles do not disturb, the same deal the volume icon makes
+(hover for the list, click to silence); the popup has that switch too, next to
+a `Count` switch that turns the badge off for when a number in the corner of
+the eye is worse than not knowing. Both are persisted, for the same reason: a
+preference about how loudly the shell talks to you should not quietly reset
+when it reloads. `Clear all` is at the bottom. Silenced notifications still land in the history, so
+nothing is lost — do not disturb is persisted in
+`~/.local/state/quickshell/by-shell/<id>/notifications.json`, because silencing
+notifications and having them come back when quickshell reloads is the one way
+this can really fail.
+
+The history itself is not persisted: it is what you missed while you were away
+from the screen, not a log.
+
+```bash
+qs ipc call notifications dismiss   # SUPER + N: clear the toasts on screen
+qs ipc call notifications dnd       # SUPER + SHIFT + N: toggle do not disturb
+qs ipc call notifications silence   # and unsilence, when a script wants one or the other
+qs ipc call notifications clear     # empty the history
+```
+
+`NotificationService.qml` is the daemon and the single source of truth. Two
+lists, both newest first: `entries` is the history, `popups` the subset
+currently on screen, so dismissing a toast only takes it out of the second.
+An entry outlives the `Notification` object it came from — apps close and
+replace their own notifications constantly (Spotify rewriting "now playing")
+and Quickshell deletes the object when they do, so each entry keeps a snapshot
+and drops the live reference instead of letting rows vanish out of the history
+by themselves. Transient notifications (progress popups, volume OSDs) get a
+toast and no row.
+
+**dunst has to be gone, not merely stopped.** `org.freedesktop.Notifications`
+is D-Bus activated: with both installed, which daemon you get is a race, and
+dunst wins it any time quickshell is restarting. It is out of `pkglist.txt`,
+and `systemd/.config/systemd/user/dunst.service` is a symlink to `/dev/null`
+masking the unit, so the name stays claimable even if something pulls the
+package back in as a dependency.
+
+```bash
+sudo pacman -Rns dunst
+```
+
+## Clipboard history
+
+`SUPER + SHIFT + V` opens the last 15 things copied
+(`quickshell/.config/quickshell/modules/clipboard`). `SUPER + V` was already
+floating, so the history sits on shift. It looks and is driven like the
+launcher, because it is the same motion: open, type to narrow, `⏎` to take the
+top one. `Del` drops the selected entry, `Esc` closes.
+
+Ranking reuses the launcher's `matchScore` from `search.js`, so a snippet is
+found the same way an app is. With an empty query the list stays in copy order
+rather than being ranked, since with nothing typed what you want is nearly
+always the last thing you copied. Copying something already in the list moves
+it up instead of stacking a second identical row.
+
+Wayland only lets the *focused* surface read the clipboard, so Quickshell's own
+`clipboardText` is permanently empty in a bar that never takes focus — that was
+tried first, and it sees nothing. `wl-paste --watch` goes through the
+data-control protocol, which is what it exists for, and wl-clipboard was
+already installed for `wl-copy`. Each new entry is handed to a shell that
+prints it followed by an ASCII record separator (`\036`), so snippets
+containing newlines — most of the interesting ones — arrive whole rather than a
+line at a time. Putting one back goes in on stdin for the same reason:
+`wl-copy` joins its arguments with spaces, which would flatten every newline.
+
+Images are handled too, by a second watcher. Text and images get a watcher
+each, asking for one type apiece, because that is the only way to tell them
+apart without a race — `wl-paste --list-types` reports on the clipboard as it
+stands now, which is not necessarily the clipboard that raised the
+notification. Asked for a single type, each watcher only ever fires for the
+kind it can read, which does hold in practice: copying text leaves the image
+watcher silent and the other way round.
+
+A copied image is written to `~/.cache/quickshell/by-shell/<id>/clipboard/`
+under a name taken from its own content hash, which buys deduplication for
+nothing — copying the same picture twice lands on the same path instead of
+filling the cache with identical files. Rows show a bounded thumbnail rather
+than decoding a full screenshot apiece, and searching matches an image on the
+word "image", since it has no text of its own. Dropping a row deletes its file,
+and a sweep at startup keeps only as many files as the history has room for, so
+a shell killed between writing an image and saving the history cannot leak one
+permanently.
+
+The history holds fifteen. Short on purpose: it is for the last few things you
+copied rather than an archive, and a list that short is one you can read
+instead of search.
+
+PNG only: `image/png` is what applications actually offer for a copied image,
+and asking for one format is what keeps the two watchers cleanly separated.
+
+**The history is plain text on disk**, in
+`~/.local/state/quickshell/by-shell/<id>/clipboard.json`. That directory is
+`0700` so it is as private as anything else in there, but a password pasted out
+of a manager lands in it like any other copy — there is no way to tell from
+`wl-paste` that it was a secret.
+
+The Clipboard tile in the quick settings menu opens the same panel, and names
+how many entries are waiting. The panel is a window owned by `shell.qml` rather
+than a singleton like the wallpaper picker, because its IPC handler has to be
+registered from the start and a singleton is only built when something first
+asks for it — so the tile raises `ClipboardService.toggleRequested` and the
+panel listens, instead of reaching into the window directly.
+
+```bash
+qs ipc call clipboard menu    # what SUPER + SHIFT + V is bound to
+qs ipc call clipboard clear   # empty the history
+```
+
+## Authentication prompts
+
+polkit was running on this machine with no agent registered against it, which
+fails quietly: anything needing privilege got no dialog and no error, it simply
+never happened. `quickshell/.config/quickshell/modules/polkit` is the missing
+half, through Quickshell's native polkit binding — nothing shells out, and
+there is no second agent to install.
+
+It is a focused layershell overlay for the same reason `WifiPrompt.qml` is one:
+a password needs keyboard focus, which a popup anchored to the bar cannot take.
+The card names the action being authorised as well as describing it, since the
+action id is the only part that says precisely what is being asked for. Whether
+the input is masked comes from polkit rather than being assumed, so a prompt
+that is not asking for a secret does not pretend to be. A wrong answer starts
+the exchange again rather than ending it, and the field empties for the retry.
+Clicking away cancels, rather than parking the prompt behind whatever asked.
+
+When more than one account could authorise an action, the card offers the
+choice; with one there is nothing to pick and it says nothing.
 
 ## Keybind cheatsheet
 

@@ -7,7 +7,9 @@ import Quickshell.Wayland
 import "."
 
 import "modules/clock"
+import "modules/components"
 import "modules/media"
+import "modules/notifications"
 import "modules/power"
 import "modules/settings"
 import "modules/tray"
@@ -70,12 +72,27 @@ Scope {
                     // icons. Children of a section must not set their own
                     // anchors -- the section lays them out in a Column.
 
-                    // TOP: workspaces and the system tray
+                    // TOP: the cat, workspaces, the tray and notifications
                     BarSection {
                         capsule: false
                         anchors.top: parent.top
                         anchors.topMargin: 8
                         anchors.horizontalCenter: parent.horizontalCenter
+
+                        // Furthest up, where the Arch logo used to be. Wrapped
+                        // so it lands in the middle of the bar: a section lays
+                        // its children out in a Column as wide as the widest
+                        // of them, and the cat is half that.
+                        //Item {
+                        //    implicitWidth: 60
+                        //    implicitHeight: 34
+
+                        //    CatIcon {
+                        //        anchors.centerIn: parent
+                        //        width: 40
+                        //        height: 40
+                        //    }
+                        //}
 
                         WorkspacesWidget {}
 
@@ -86,6 +103,18 @@ Scope {
                             popupContent: Component {
                                 TrayPopup {
                                     onMenuOpenChanged: trayExpandable.keepOpen = menuOpen
+                                }
+                            }
+                        }
+
+                        ExpandableItem {
+                            id: notificationItem
+                            barWindow: bar
+                            iconComponent: NotificationWidget {}
+                            popupContent: Component {
+                                NotificationPopup {
+                                    // Opening the list is what clears the badge.
+                                    active: notificationItem.open
                                 }
                             }
                         }
@@ -112,7 +141,7 @@ Scope {
                     BarSection {
                         capsule: false
                         anchors.bottom: controlsSection.top
-                        anchors.bottomMargin: 14
+                        anchors.bottomMargin: 0
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         ExpandableItem {

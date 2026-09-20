@@ -119,7 +119,13 @@ Item {
                 anchor.rect.y = winItem.height - popup.implicitHeight;
             } else {
                 const pos = root.mapToItem(winItem, 0, 0);
-                anchor.rect.y = pos.y +(root.height - popup.implicitHeight) / 2;
+                const centred = pos.y + (root.height - popup.implicitHeight) / 2;
+                // Clamped to the screen: items near either end of the bar --
+                // the notification bell is the tall one -- would otherwise
+                // have the top or bottom of their popup cut off. The card is
+                // a panel rather than a speech bubble, so it does not have to
+                // stay lined up with the icon that opened it.
+                anchor.rect.y = Math.max(0, Math.min(centred, winItem.height - popup.implicitHeight));
             }
         }
     }

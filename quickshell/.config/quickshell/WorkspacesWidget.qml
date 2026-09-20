@@ -17,15 +17,15 @@ Item {
         spacing: 12
 
         // Arch logo
-        Text {
-            text: "󰣇"
-            color: Modules.Theme.foreground
-            rightPadding: 5
-            topPadding: 8
-            font.pixelSize: 30
-            horizontalAlignment: Text.AlignHCenter
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
+//        Text {
+//            text: "󰣇"
+//            color: Modules.Theme.foreground
+//            rightPadding: 5
+//            topPadding: 8
+//            font.pixelSize: 30
+//            horizontalAlignment: Text.AlignHCenter
+//            anchors.horizontalCenter: parent.horizontalCenter
+//        }
 
         // Workspaces background
         Rectangle {

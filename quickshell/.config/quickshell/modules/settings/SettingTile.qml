@@ -52,6 +52,17 @@ Rectangle {
             color: Modules.Theme.inactive
             font.family: "Roboto Mono"
             font.pixelSize: 12
+            // A value is a value, not a headline: it gives way rather than
+            // squeezing the title out of its own tile. Wallpapers are the
+            // reason -- "a_painting_of_a_tree_and_water.jpg" is wider than the
+            // tile it has to fit in. Measured against the tile rather than the
+            // layout, since asking a Qt Quick Layout for its width while it is
+            // being laid out sends it into a recursive rearrange.
+            // A third of the tile: enough that the longest title in the row
+            // still fits whole, since the title is what says which tile this
+            // is and the value is only ever a detail about it.
+            Layout.maximumWidth: root.width * 0.33
+            elide: Text.ElideRight
         }
     }
 

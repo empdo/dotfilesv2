@@ -8,6 +8,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import "."
+import "../clipboard"
 import "../connectivity"
 import "../wallpaper"
 import "../" as Modules
@@ -20,7 +21,7 @@ Item {
     // Keeps the bar popup pinned while the passphrase overlay is up.
     readonly property bool holdOpen: WifiPrompt.open
 
-    implicitWidth: 620
+    implicitWidth: 700
     implicitHeight: 470
 
     ColumnLayout {
@@ -45,6 +46,15 @@ Item {
                 title: "Wallpaper"
                 value: WallpaperPanel.currentName || "Choose\u2026"
                 onClicked: WallpaperPanel.toggle()
+            }
+
+            SettingTile {
+                glyph: "\uF0EA"        // nf-fa-paste
+                title: "Clipboard"
+                value: ClipboardService.hasEntries
+                     ? ClipboardService.entries.length + " saved"
+                     : "Empty"
+                onClicked: ClipboardService.toggle()
             }
         }
 

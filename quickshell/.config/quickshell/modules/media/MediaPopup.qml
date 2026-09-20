@@ -204,7 +204,7 @@ Item {
                     required property var modelData
 
                     readonly property bool current:
-                        MediaService.active && MediaService.active.uniqueId === modelData.uniqueId
+                        MediaService.active && MediaService.active.dbusName === modelData.dbusName
 
                     implicitWidth: label.implicitWidth + 16
                     implicitHeight: 20

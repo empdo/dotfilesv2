@@ -16,14 +16,20 @@ Singleton {
     readonly property bool hasPlayers: players.length > 0
 
     // Set from the popup when the user picks a player by hand. Kept as the
-    // player's uniqueId rather than the object, so a client that restarts
-    // does not leave a dangling reference.
-    property int preferredId: -1
+    // player's bus name rather than the object, so a client that restarts does
+    // not leave a dangling reference -- it simply stops matching, and the
+    // choice below takes over again.
+    //
+    // Not `uniqueId`, despite the name: it is a per-connection counter, and
+    // every player on this machine reports 1. Comparing on it made each pill
+    // in the popup think it was the current one, and picking any of them
+    // always landed on whichever player happened to be first in the list.
+    property string preferredPlayer: ""
 
     readonly property var active: {
         // An explicit choice wins, for as long as that player is still around.
         for (const p of players)
-            if (p.uniqueId === root.preferredId)
+            if (p.dbusName === root.preferredPlayer)
                 return p;
         // Otherwise whatever is actually making noise, then whatever has a
         // track loaded, so a paused Spotify still beats an idle client.
@@ -88,7 +94,7 @@ Singleton {
     }
 
     function selectPlayer(player) {
-        root.preferredId = player ? player.uniqueId : -1;
+        root.preferredPlayer = player ? player.dbusName : "";
     }
 
     // mm:ss, for the two ends of the progress bar.

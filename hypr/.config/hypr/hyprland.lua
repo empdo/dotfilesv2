@@ -21,7 +21,7 @@ hl.monitor({ output = "HDMI-A-3", mode = "1920x1080@60", position = "2560x0", sc
 
 ---------------------
 ---- MY PROGRAMS ----
----------------------
+--------------------
 
 local terminal    = "kitty"
 local fileManager = "dolphin"
@@ -43,10 +43,10 @@ end)
 ---- ENVIRONMENT VARIABLES ----
 -------------------------------
 
-hl.env("XCURSOR_SIZE", "20")
+hl.env("XCURSOR_SIZE", "16")
 hl.env("HYPRCURSOR_THEME", "Bibata-Modern-Ice")
-hl.env("HYPRCURSOR_SIZE", "12")
 hl.env("GTK_THEME", "Adwaita:dark")
+
 
 
 -----------------------
@@ -119,6 +119,7 @@ hl.config({
     misc = {
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
+        disable_splash_rendering = true
     },
 })
 
@@ -133,8 +134,8 @@ hl.curve("quick",          { type = "bezier", points = { {0.15, 0},    {0.1, 1} 
 local animations = {
     { "global",        10,   "default" },
     { "border",        5.39, "easeOutQuint" },
-    { "windows",       4.79, "easeOutQuint" },
-    { "windowsIn",     4.1,  "easeOutQuint", "popin 87%" },
+    { "windows",       0.1, "easeOutQuint" },
+    { "windowsIn",     1.1,  "easeOutQuint", "popin 87%" },
     { "windowsOut",    1.49, "linear",       "popin 87%" },
     { "fadeIn",        1.73, "almostLinear" },
     { "fadeOut",       1.46, "almostLinear" },
@@ -242,6 +243,20 @@ end, { desc = "Toggle wide gaps on this workspace" })
 -- On a Swedish layout "/" is Shift+7, so SUPER + SLASH would collide with
 -- SUPER + SHIFT + 7. Letter keys carry no such baggage.
 hl.bind(key("ALT + K"), hl.dsp.exec_cmd("qs ipc call cheatsheet toggle"), { desc = "Show keybind cheatsheet" })
+
+-- Notifications (Quickshell; see ~/.config/quickshell/modules/notifications).
+-- The history lives behind the bell in the bar, so these are only the two
+-- things worth reaching for without the mouse: shutting the current batch up,
+-- and silencing everything before a call or a screen share.
+hl.bind(key("N"),         hl.dsp.exec_cmd("qs ipc call notifications dismiss"),
+    { desc = "Dismiss notifications on screen" })
+hl.bind(key("SHIFT + N"), hl.dsp.exec_cmd("qs ipc call notifications dnd"),
+    { desc = "Toggle do not disturb" })
+
+-- Clipboard history (Quickshell; see ~/.config/quickshell/modules/clipboard).
+-- SUPER + V is already taken by floating, so the history sits on shift.
+hl.bind(key("SHIFT + V"), hl.dsp.exec_cmd("qs ipc call clipboard menu"),
+    { desc = "Clipboard history" })
 
 -- Scroll through existing workspaces
 hl.bind(key("mouse_down"), hl.dsp.focus({ workspace = "e+1" }), { desc = "Next workspace" })

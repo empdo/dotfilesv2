@@ -26,6 +26,9 @@ Singleton {
     property color trough: light ? "#d7ddc8" : "#333333"
     property color inactive: light ? "#9aa489" : "#666666"
 
+    // The one colour in the palette: critical notifications only.
+    property color urgent: light ? "#a33a2b" : "#e06c75"
+
     // fade between palettes instead of snapping
     Behavior on background {
         ColorAnimation {
@@ -48,6 +51,11 @@ Singleton {
         }
     }
     Behavior on inactive {
+        ColorAnimation {
+            duration: 180
+        }
+    }
+    Behavior on urgent {
         ColorAnimation {
             duration: 180
         }

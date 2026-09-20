@@ -115,6 +115,8 @@ Scope {
                     WorkspacesWidget {
                         horizontal: root.horizontal
                         thickness: root.thickness
+                        // Each bar shows only its own monitor's workspaces.
+                        monitorName: root.screen ? root.screen.name : ""
                     }
 
                     ExpandableItem {
@@ -179,7 +181,10 @@ Scope {
                         id: clockItem
                         barWindow: bar
                         horizontal: root.horizontal
-                        iconComponent: ClockWidget {}
+                        iconComponent: ClockWidget {
+                            horizontal: root.horizontal
+                            thickness: root.thickness
+                        }
                         popupContent: Component {
                             CalendarPopup {}
                         }

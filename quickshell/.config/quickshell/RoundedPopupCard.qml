@@ -122,24 +122,19 @@ Item {
         }
     }
 
-    // SAFE area inside the curved shape: inset along the bar, where the
+    // Safe area inside the curved shape: inset along the bar, where the
     // fillets eat into the card, and not at all across its depth.
+    //
+    // A plain Item rather than a positioner, so whatever goes in it can anchor
+    // itself to the edge the card grows out of -- and because a positioner
+    // forbids exactly the anchors that needs.
     Item {
-        id: contentArea
-        anchors {
-            top: root.horizontal ? undefined : parent.top
-            bottom: root.horizontal ? undefined : parent.bottom
-            left: root.horizontal ? parent.left : undefined
-            right: root.horizontal ? parent.right : undefined
-            leftMargin: root.horizontal ? root.padding / 2 : 0
-            topMargin: root.horizontal ? 0 : root.padding / 2
-        }
-    }
-
-    Column {
         id: contentItem
-        anchors.fill: contentArea
-        spacing: 10
+        anchors.fill: parent
+        anchors.topMargin: root.horizontal ? 0 : root.padding / 2
+        anchors.bottomMargin: root.horizontal ? 0 : root.padding / 2
+        anchors.leftMargin: root.horizontal ? root.padding / 2 : 0
+        anchors.rightMargin: root.horizontal ? root.padding / 2 : 0
     }
 
     layer.enabled: true

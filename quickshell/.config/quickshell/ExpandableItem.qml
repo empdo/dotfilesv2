@@ -84,6 +84,14 @@ Item {
             Loader {
                 id: popupLoader
 
+                // Pinned to the edge the bar is on, so the card opens out of
+                // the bar. Anchored to the far side it would grow the other
+                // way: appearing at the top of the screen and reaching down
+                // towards the bar.
+                anchors.left: parent.left
+                anchors.top: root.horizontal ? undefined : parent.top
+                anchors.bottom: root.horizontal ? parent.bottom : undefined
+
                 sourceComponent: Component {
                     RoundedPopupCard {
                         id: card
@@ -116,8 +124,12 @@ Item {
                         content: Loader {
                             id: innerLoader
                             sourceComponent: popupContent
-                            anchors.top: parent.top
+                            // Against the edge the card grows from, so the
+                            // contents stay put by the bar while the shape
+                            // opens around them.
                             anchors.left: parent.left
+                            anchors.top: root.horizontal ? undefined : parent.top
+                            anchors.bottom: root.horizontal ? parent.bottom : undefined
                         }
                     }
                 }

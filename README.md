@@ -105,6 +105,77 @@ qs ipc call launcher toggle   # what SUPER + D is bound to
 
 ## Bar layout
 
+There is a bar on every output (`Variants` over `Quickshell.screens` in
+`shell.qml`), and a screen taller than it is wide gets its bar across the
+bottom rather than down the left edge. This machine's second monitor is rotated
+a quarter turn, where a vertical bar would eat a twentieth of an already narrow
+screen. The orientation is read off the screen's shape rather than its name, so
+a monitor added or re-rotated sorts itself out.
+
+Both are the same `Bar.qml`. `horizontal` is threaded down through
+`BarSection`, `ExpandableItem`, `RoundedPopupCard`, `WorkspacesWidget` and
+`ClockWidget` rather than there being a second bar to keep in step. Three of
+those only have to swap an axis — a section lays its children out in a `Grid`
+whose `columns` is 1 or many, which keeps one child list either way. The other
+two are more than a transposition:
+
+- `RoundedPopupCard` draws its path once, in the bar's own terms — `u` is depth
+  away from the bar, `v` runs along it — and a `point()` helper turns that into
+  canvas coordinates for whichever edge the bar is on. A horizontal popup is
+  the same shape a quarter turn round, growing upwards out of the bar with its
+  two concave fillets along its bottom edge.
+- `ClockWidget` genuinely changes: 60px of width will not take "03:59" at a
+  readable size, so a vertical bar gets a component per line down it, while a
+  horizontal bar has 60px of height instead and gets the time over the date.
+
+A popup is pinned to the edge its bar is on, so it opens *out of* the bar;
+anchored to the far side it grows the other way, appearing at the top of the
+screen and reaching down towards the bar. A section centres its items on both
+axes for a related reason: a `Grid` aligns cells to the top-left unless told
+otherwise, and the items are not all the same size — the workspaces pill fills
+the bar's whole thickness while an icon is only 40px of it, which left the tray
+and the bell riding high of everything beside them.
+
+Popups are clamped to the screen along the bar in both orientations, which is
+what lets the horizontal bar do without `smoothBottom` — the vertical bar's
+trick of pinning the bottom three popups to the screen edge, since they sit too
+low to be centred on their icon without being clipped.
+
+### Workspaces
+
+Slots, not a list of whatever happens to be open. Hyprland only reports
+workspaces that exist, so a plain repeater over them means the third dot is
+workspace 3 one minute and workspace 7 the next, and position tells you
+nothing. Slots make position *be* the identity: the fourth dot is always
+workspace 4, which is what `SUPER + 4` goes to.
+
+The row runs up to the highest workspace in use on that monitor rather than to
+a fixed ten, so two workspaces show two dots and a jump to 8 shows eight, with
+2 to 7 sitting empty in between. Those gaps are the point — they are what keeps
+the eighth dot the eighth. An empty slot stays at low opacity behind a thin
+edge, holding the position that gives the others their meaning without
+competing with the ones in use. Special workspaces carry negative ids and get
+no slot.
+
+Each bar shows only the workspaces living on **its own** monitor, so the two
+bars say different things. A workspace is on exactly one monitor at a time, and
+which one is half of what you want to know.
+
+The fill distinguishes two states that are easy to conflate. `active` is the
+workspace a monitor is showing; `focused` is the one the keyboard is on, and
+there is only ever one of those across both screens. So the bar you are working
+on has a bright dot, and the other bar shows a muted one saying "this is what
+is over there". Filling on `active` alone was the bug this replaced: with two
+monitors, two workspaces are always active, so two dots were always lit and
+neither told you where you were.
+
+Clicking an empty slot switches to that workspace, which creates it. That goes
+through `Hyprland.dispatch` with a **Lua** dispatcher, because this config is
+in Lua mode where `workspace 5` is an error — the same trap the power menu
+documents. `Hyprland.usingLua` decides which form to send.
+
+## Bar layout (continued)
+
 The bar groups its items into four capsules (`BarSection.qml`) rather than
 spacing ten icons evenly down the edge, so it reads as a few groups:
 the cat, workspaces, the tray and the notification bell at the top, now playing

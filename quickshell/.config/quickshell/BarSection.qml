@@ -48,5 +48,13 @@ Item {
         // along a horizontal one. A Grid keeps a single child list either way,
         // so a section does not need two positioners to pick between.
         columns: root.horizontal ? 100 : 1
+
+        // A Grid aligns its cells to the top-left corner unless told
+        // otherwise, and the items in a section are not all the same size --
+        // the workspaces pill fills the bar's whole thickness while an icon
+        // is only 40px of it, which left the tray and the bell riding 10px
+        // high of everything beside them.
+        horizontalItemAlignment: Grid.AlignHCenter
+        verticalItemAlignment: Grid.AlignVCenter
     }
 }

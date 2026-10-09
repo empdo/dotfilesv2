@@ -73,6 +73,16 @@ run `tmux` and the old `~/.tmux.conf` (same `ctrl+s` prefix) applies as before.
 entries directly through Quickshell's `DesktopEntries`, so there is no cache to
 rebuild — installing an app makes it show up.
 
+It opens flush against the bar rather than floating in the middle of the
+screen: the same `RoundedPopupCard` the bar's own popups are drawn in, with its
+two concave fillets along the attached edge, so the launcher reads as the bar
+unfolding rather than as a panel that happened to land nearby. The wash behind
+it stops at the bar — the shell has no business dimming itself to show its own
+menu — and is `Theme.background` rather than black, which in the light palette
+is the difference between the desktop stepping back and a hole in the screen.
+The shape, the placement and the 200ms it takes to grow out of the bar all live
+in `BarDrawer.qml`, which the clipboard history opens in too.
+
 Typing ranks rather than merely filters: an exact name beats a prefix, which
 beats a word-boundary hit inside the name, which beats scattered letters
 (`vsc` finds Visual Studio Code). Keywords, generic name and comment are
@@ -113,8 +123,12 @@ screen. The orientation is read off the screen's shape rather than its name, so
 a monitor added or re-rotated sorts itself out.
 
 Both are the same `Bar.qml`. `horizontal` is threaded down through
-`BarSection`, `ExpandableItem`, `RoundedPopupCard`, `WorkspacesWidget` and
-`ClockWidget` rather than there being a second bar to keep in step. Three of
+`BarSection`, `ExpandableItem`, `RoundedPopupCard`, `BarDrawer`,
+`WorkspacesWidget` and `ClockWidget` rather than there being a second bar to
+keep in step. Which edge it is comes from `Modules.Shell`, along with the bar's
+thickness: the bar and the two drawers that open flush against it all have to
+agree, and disagreeing does not look like a wrong number — it looks like a
+drawer growing out of the wrong side of the screen. Three of
 those only have to swap an axis — a section lays its children out in a `Grid`
 whose `columns` is 1 or many, which keeps one child list either way. The other
 two are more than a transposition:
@@ -388,7 +402,10 @@ sudo pacman -Rns dunst
 (`quickshell/.config/quickshell/modules/clipboard`). `SUPER + V` was already
 floating, so the history sits on shift. It looks and is driven like the
 launcher, because it is the same motion: open, type to narrow, `⏎` to take the
-top one. `Del` drops the selected entry, `Esc` closes.
+top one. `Del` drops the selected entry, `Esc` closes. It opens in the same
+`BarDrawer`, at the same size — the two used to be centred slabs of different
+widths and different corner radii, which was two panels doing one job in two
+voices.
 
 Ranking reuses the launcher's `matchScore` from `search.js`, so a snippet is
 found the same way an app is. With an empty query the list stays in copy order

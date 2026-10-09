@@ -12,8 +12,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import Quickshell.Hyprland
-import Quickshell.Wayland
+import "../../" as Shell
 import "../" as Modules
 import "search.js" as Search
 
@@ -33,38 +32,24 @@ Scope {
 
     // --- state ---------------------------------------------------------------
 
-    property bool open: false
+    // Owned by the drawer, which has to resolve the screen before it shows
+    // itself; this is the same flag under a name the rest of the file already
+    // uses.
+    readonly property bool open: drawer.open
+
     property int selected: 0
     property var uses: ({})
 
     readonly property string query: input.text
 
-    // The screen the launcher should appear on. A PanelWindow with no `screen`
-    // lands on whatever Qt calls the default output, which on a multi-monitor
-    // setup is rarely the one being looked at -- so resolve it from Hyprland's
-    // focused monitor each time the launcher is opened.
-    property var targetScreen: null
-
-    function focusedScreen() {
-        const mon = Hyprland.focusedMonitor;
-        if (mon) {
-            const screens = Quickshell.screens;
-            for (let i = 0; i < screens.length; i++)
-                if (screens[i].name === mon.name)
-                    return screens[i];
-        }
-        return null;
-    }
-
     function show() {
         input.text = "";
         selected = 0;
-        targetScreen = root.focusedScreen();
-        open = true;
+        drawer.show();
     }
 
     function hide() {
-        open = false;
+        drawer.hide();
         input.text = "";
         selected = 0;
     }
@@ -234,165 +219,127 @@ Scope {
     // Typing changes what is on offer, so the cursor goes back to the best match.
     onQueryChanged: root.select(0)
 
-    // --- the overlay ---------------------------------------------------------
+    // --- the drawer ----------------------------------------------------------
 
-    PanelWindow {
-        id: overlay
-        visible: root.open
-        color: "transparent"
-        screen: root.targetScreen
+    Shell.BarDrawer {
+        id: drawer
+        layerNamespace: "quickshell:launcher"
 
-        anchors { top: true; left: true; right: true; bottom: true }
-
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        WlrLayershell.namespace: "quickshell:launcher"
-        exclusionMode: ExclusionMode.Ignore
-
-        // Dim the desktop, and treat a click outside the card as "never mind".
-        Rectangle {
+        ColumnLayout {
             anchors.fill: parent
-            color: "#000000"
-            opacity: 0.45
+            spacing: 14
 
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.hide()
-            }
-        }
+            // ---- search box ----
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
 
-        Rectangle {
-            id: card
-            anchors.centerIn: parent
-            width: Math.min(parent.width - 120, 760)
-            height: Math.min(parent.height - 120, 560)
-            radius: 10
-            color: Modules.Theme.background
-            border.width: 1
-            border.color: Modules.Theme.foreground
+                Label {
+                    text: "\uF002"        // nf-fa-search
+                    color: Modules.Theme.foreground
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 20
+                }
 
-            // Swallow clicks so they do not reach the dim layer behind.
-            MouseArea {
-                anchors.fill: parent
-            }
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 22
-                spacing: 14
-
-                // ---- search box ----
-                RowLayout {
+                TextInput {
+                    id: input
                     Layout.fillWidth: true
-                    spacing: 12
+                    color: Modules.Theme.foreground
+                    font.family: "Roboto Mono"
+                    font.pixelSize: 20
+                    selectionColor: Modules.Theme.trough
+                    selectedTextColor: Modules.Theme.foreground
+                    focus: true
+                    // A launcher query is one line; Enter is for launching.
+                    inputMethodHints: Qt.ImhNoPredictiveText
 
                     Label {
-                        text: "\uF002"        // nf-fa-search
-                        color: Modules.Theme.foreground
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 20
-                    }
-
-                    TextInput {
-                        id: input
-                        Layout.fillWidth: true
-                        color: Modules.Theme.foreground
-                        font.family: "Roboto Mono"
-                        font.pixelSize: 20
-                        selectionColor: Modules.Theme.trough
-                        selectedTextColor: Modules.Theme.foreground
-                        focus: true
-                        // A launcher query is one line; Enter is for launching.
-                        inputMethodHints: Qt.ImhNoPredictiveText
-
-                        Label {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: input.text === ""
-                            text: "Search applications"
-                            color: Modules.Theme.inactive
-                            font: input.font
-                        }
-
-                        // Navigation is handled here rather than on a wrapping
-                        // FocusScope so the arrow keys never move the text cursor.
-                        Keys.onPressed: event => {
-                            const ctrl = event.modifiers & Qt.ControlModifier;
-
-                            if (event.key === Qt.Key_Escape) {
-                                root.hide();
-                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                root.launch(root.current);
-                            } else if (event.key === Qt.Key_Down
-                                       || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
-                                root.move(1);
-                            } else if (event.key === Qt.Key_Up
-                                       || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
-                                root.move(-1);
-                            } else if (event.key === Qt.Key_PageDown) {
-                                root.move(list.pageRows);
-                            } else if (event.key === Qt.Key_PageUp) {
-                                root.move(-list.pageRows);
-                            } else if (event.key === Qt.Key_Home && ctrl) {
-                                root.select(0);
-                            } else if (event.key === Qt.Key_End && ctrl) {
-                                root.select(Math.max(0, root.results.length - 1));
-                            } else if (event.key === Qt.Key_Tab) {
-                                // Complete to the selected app's name, so Tab then
-                                // typing narrows within one app's actions.
-                                if (root.current)
-                                    input.text = root.current.name;
-                            } else {
-                                return;   // hand everything else to text editing
-                            }
-                            event.accepted = true;
-                        }
-                    }
-
-                    Label {
-                        text: root.results.length + (root.results.length === 1 ? " result" : " results")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: input.text === ""
+                        text: "Search applications"
                         color: Modules.Theme.inactive
-                        font.family: "Roboto Mono"
-                        font.pixelSize: 12
+                        font: input.font
                     }
-                }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: Modules.Theme.divider
-                }
+                    // Navigation is handled here rather than on a wrapping
+                    // FocusScope so the arrow keys never move the text cursor.
+                    Keys.onPressed: event => {
+                        const ctrl = event.modifiers & Qt.ControlModifier;
 
-                // ---- results ----
-                AppList {
-                    id: list
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    entries: root.results
-                    selected: root.selected
-                    query: root.query
-
-                    onHovered: i => root.selected = i
-                    onActivated: i => root.launch(root.results[i])
+                        if (event.key === Qt.Key_Escape) {
+                            root.hide();
+                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            root.launch(root.current);
+                        } else if (event.key === Qt.Key_Down
+                                   || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
+                            root.move(1);
+                        } else if (event.key === Qt.Key_Up
+                                   || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
+                            root.move(-1);
+                        } else if (event.key === Qt.Key_PageDown) {
+                            root.move(list.pageRows);
+                        } else if (event.key === Qt.Key_PageUp) {
+                            root.move(-list.pageRows);
+                        } else if (event.key === Qt.Key_Home && ctrl) {
+                            root.select(0);
+                        } else if (event.key === Qt.Key_End && ctrl) {
+                            root.select(Math.max(0, root.results.length - 1));
+                        } else if (event.key === Qt.Key_Tab) {
+                            // Complete to the selected app's name, so Tab then
+                            // typing narrows within one app's actions.
+                            if (root.current)
+                                input.text = root.current.name;
+                        } else {
+                            return;   // hand everything else to text editing
+                        }
+                        event.accepted = true;
+                    }
                 }
 
                 Label {
-                    Layout.fillWidth: true
-                    text: "↑↓ select    ⏎ launch    ⇥ complete    Esc close"
+                    text: root.results.length + (root.results.length === 1 ? " result" : " results")
                     color: Modules.Theme.inactive
                     font.family: "Roboto Mono"
                     font.pixelSize: 12
-                    horizontalAlignment: Text.AlignHCenter
                 }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Modules.Theme.divider
+            }
+
+            // ---- results ----
+            AppList {
+                id: list
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                entries: root.results
+                selected: root.selected
+                query: root.query
+
+                onHovered: i => root.selected = i
+                onActivated: i => root.launch(root.results[i])
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: "↑↓ select    ⏎ launch    ⇥ complete    Esc close"
+                color: Modules.Theme.inactive
+                font.family: "Roboto Mono"
+                font.pixelSize: 12
+                horizontalAlignment: Text.AlignHCenter
             }
         }
 
         // Layershell windows are mapped when `visible` flips, so focus has to be
         // taken after the fact rather than once at construction.
         Connections {
-            target: root
+            target: drawer
             function onOpenChanged() {
-                if (root.open)
+                if (drawer.open)
                     input.forceActiveFocus();
             }
         }

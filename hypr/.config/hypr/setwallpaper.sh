@@ -11,6 +11,7 @@ MONITORS=$(hyprctl monitors -j | jq -r '.[].name')
     for MON in $MONITORS; do
         printf 'wallpaper {\n    monitor = %s\n    path = %s\n    fit_mode = cover\n}\n\n' "$MON" "$IMG"
     done
+    echo "splash = false"
 } > "$CONF"
 
 # Start hyprpaper if it isn't running (it will read the new config)

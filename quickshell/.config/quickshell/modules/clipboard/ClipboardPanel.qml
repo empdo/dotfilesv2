@@ -17,9 +17,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
-import Quickshell.Wayland
+import "../../" as Shell
 import "."
 import "../" as Modules
 import "../launcher/search.js" as Search
@@ -27,26 +26,14 @@ import "../launcher/search.js" as Search
 Scope {
     id: root
 
-    property bool open: false
+    // Owned by the drawer, which has to resolve the screen before it shows
+    // itself; this is the same flag under a name the rest of the file already
+    // uses.
+    readonly property bool open: drawer.open
+
     property int selected: 0
 
     readonly property string query: input.text
-
-    // The same trick the launcher plays: a PanelWindow with no `screen` lands
-    // on whatever Qt calls the default output, which is rarely the one being
-    // looked at, so ask Hyprland which monitor has focus.
-    property var targetScreen: null
-
-    function focusedScreen() {
-        const mon = Hyprland.focusedMonitor;
-        if (mon) {
-            const screens = Quickshell.screens;
-            for (let i = 0; i < screens.length; i++)
-                if (screens[i].name === mon.name)
-                    return screens[i];
-        }
-        return null;
-    }
 
     readonly property var results: {
         const all = ClipboardService.entries;
@@ -74,12 +61,11 @@ Scope {
     function show() {
         input.text = "";
         selected = 0;
-        targetScreen = root.focusedScreen();
-        open = true;
+        drawer.show();
     }
 
     function hide() {
-        open = false;
+        drawer.hide();
         input.text = "";
         selected = 0;
     }
@@ -139,154 +125,118 @@ Scope {
         function clear(): void  { ClipboardService.clear(); }
     }
 
-    PanelWindow {
-        id: overlay
-        visible: root.open
-        color: "transparent"
-        screen: root.targetScreen
+    Shell.BarDrawer {
+        id: drawer
+        layerNamespace: "quickshell:clipboard"
 
-        anchors { top: true; left: true; right: true; bottom: true }
-
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-        WlrLayershell.namespace: "quickshell:clipboard"
-        exclusionMode: ExclusionMode.Ignore
-
-        Rectangle {
+        ColumnLayout {
             anchors.fill: parent
-            color: "#000000"
-            opacity: 0.45
+            spacing: 14
 
-            MouseArea {
-                anchors.fill: parent
-                onClicked: root.hide()
-            }
-        }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
 
-        Rectangle {
-            id: card
-            anchors.centerIn: parent
-            width: Math.min(parent.width - 120, 680)
-            height: Math.min(parent.height - 120, 540)
-            radius: 18
-            color: Modules.Theme.background
-            border.width: 1
-            border.color: Modules.Theme.foreground
+                Label {
+                    text: ""        // nf-fa-paste
+                    color: Modules.Theme.foreground
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 20
+                }
 
-            MouseArea {
-                anchors.fill: parent
-            }
-
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 22
-                spacing: 14
-
-                RowLayout {
+                TextInput {
+                    id: input
                     Layout.fillWidth: true
-                    spacing: 12
+                    color: Modules.Theme.foreground
+                    font.family: "Roboto Mono"
+                    font.pixelSize: 20
+                    selectionColor: Modules.Theme.trough
+                    selectedTextColor: Modules.Theme.foreground
+                    focus: true
+                    inputMethodHints: Qt.ImhNoPredictiveText
 
                     Label {
-                        text: ""        // nf-fa-paste
-                        color: Modules.Theme.foreground
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 20
-                    }
-
-                    TextInput {
-                        id: input
-                        Layout.fillWidth: true
-                        color: Modules.Theme.foreground
-                        font.family: "Roboto Mono"
-                        font.pixelSize: 20
-                        selectionColor: Modules.Theme.trough
-                        selectedTextColor: Modules.Theme.foreground
-                        focus: true
-                        inputMethodHints: Qt.ImhNoPredictiveText
-
-                        Label {
-                            anchors.verticalCenter: parent.verticalCenter
-                            visible: input.text === ""
-                            text: "Search clipboard"
-                            color: Modules.Theme.inactive
-                            font: input.font
-                        }
-
-                        Keys.onPressed: event => {
-                            const ctrl = event.modifiers & Qt.ControlModifier;
-
-                            if (event.key === Qt.Key_Escape) {
-                                root.hide();
-                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                root.take(root.current);
-                            } else if (event.key === Qt.Key_Delete
-                                       || (ctrl && event.key === Qt.Key_D)) {
-                                root.drop(root.current);
-                            } else if (event.key === Qt.Key_Down
-                                       || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
-                                root.move(1);
-                            } else if (event.key === Qt.Key_Up
-                                       || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
-                                root.move(-1);
-                            } else if (event.key === Qt.Key_PageDown) {
-                                root.move(list.pageRows);
-                            } else if (event.key === Qt.Key_PageUp) {
-                                root.move(-list.pageRows);
-                            } else if (event.key === Qt.Key_Home && ctrl) {
-                                root.select(0);
-                            } else if (event.key === Qt.Key_End && ctrl) {
-                                root.select(Math.max(0, root.results.length - 1));
-                            } else {
-                                return;   // hand everything else to text editing
-                            }
-                            event.accepted = true;
-                        }
-                    }
-
-                    Label {
-                        text: root.results.length + (root.results.length === 1 ? " entry" : " entries")
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: input.text === ""
+                        text: "Search clipboard"
                         color: Modules.Theme.inactive
-                        font.family: "Roboto Mono"
-                        font.pixelSize: 12
+                        font: input.font
                     }
-                }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    height: 1
-                    color: Modules.Theme.divider
-                }
+                    Keys.onPressed: event => {
+                        const ctrl = event.modifiers & Qt.ControlModifier;
 
-                ClipboardList {
-                    id: list
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    entries: root.results
-                    selected: root.selected
-                    query: root.query
-
-                    onHovered: i => root.selected = i
-                    onActivated: i => root.take(root.results[i])
+                        if (event.key === Qt.Key_Escape) {
+                            root.hide();
+                        } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                            root.take(root.current);
+                        } else if (event.key === Qt.Key_Delete
+                                   || (ctrl && event.key === Qt.Key_D)) {
+                            root.drop(root.current);
+                        } else if (event.key === Qt.Key_Down
+                                   || (ctrl && (event.key === Qt.Key_J || event.key === Qt.Key_N))) {
+                            root.move(1);
+                        } else if (event.key === Qt.Key_Up
+                                   || (ctrl && (event.key === Qt.Key_K || event.key === Qt.Key_P))) {
+                            root.move(-1);
+                        } else if (event.key === Qt.Key_PageDown) {
+                            root.move(list.pageRows);
+                        } else if (event.key === Qt.Key_PageUp) {
+                            root.move(-list.pageRows);
+                        } else if (event.key === Qt.Key_Home && ctrl) {
+                            root.select(0);
+                        } else if (event.key === Qt.Key_End && ctrl) {
+                            root.select(Math.max(0, root.results.length - 1));
+                        } else {
+                            return;   // hand everything else to text editing
+                        }
+                        event.accepted = true;
+                    }
                 }
 
                 Label {
-                    Layout.fillWidth: true
-                    text: "↑↓ select    ⏎ copy    Del remove    Esc close"
+                    text: root.results.length + (root.results.length === 1 ? " entry" : " entries")
                     color: Modules.Theme.inactive
                     font.family: "Roboto Mono"
                     font.pixelSize: 12
-                    horizontalAlignment: Text.AlignHCenter
                 }
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                height: 1
+                color: Modules.Theme.divider
+            }
+
+            ClipboardList {
+                id: list
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                entries: root.results
+                selected: root.selected
+                query: root.query
+
+                onHovered: i => root.selected = i
+                onActivated: i => root.take(root.results[i])
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: "↑↓ select    ⏎ copy    Del remove    Esc close"
+                color: Modules.Theme.inactive
+                font.family: "Roboto Mono"
+                font.pixelSize: 12
+                horizontalAlignment: Text.AlignHCenter
             }
         }
 
         // Layershell windows are mapped when `visible` flips, so focus has to
         // be taken after the fact rather than once at construction.
         Connections {
-            target: root
+            target: drawer
             function onOpenChanged() {
-                if (root.open)
+                if (drawer.open)
                     input.forceActiveFocus();
             }
         }

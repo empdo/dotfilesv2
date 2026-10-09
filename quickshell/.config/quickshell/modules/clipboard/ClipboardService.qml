@@ -63,12 +63,20 @@ Singleton {
     // Images are written to a file named after their own content hash, which
     // buys deduplication for nothing: copying the same picture twice lands on
     // the same path instead of filling the cache with identical files.
+    //
+    // An offer that turns out to be empty is thrown away rather than recorded.
+    // An application that advertises image/png and then hands over nothing --
+    // a browser losing the selection between the offer and the read does it --
+    // would otherwise put a row at the top of the history that shows as a
+    // broken thumbnail, cannot be pasted, and logs a decode error every time
+    // the list draws it.
     Process {
         running: true
         command: ["wl-paste", "--type", "image/png", "--watch", "sh", "-c",
                   'mkdir -p "$1" && t="$1/.incoming.$$" && cat > "$t" '
-                  + '&& h=$(sha256sum "$t" | cut -c1-16) && f="$1/$h.png" '
-                  + '&& mv -f "$t" "$f" && printf "%s\\t%s\\036" "$f" "$(wc -c < "$f")"',
+                  + '&& if [ -s "$t" ]; then h=$(sha256sum "$t" | cut -c1-16) && f="$1/$h.png" '
+                  + '&& mv -f "$t" "$f" && printf "%s\\t%s\\036" "$f" "$(wc -c < "$f")"; '
+                  + 'else rm -f "$t"; fi',
                   "sh", root.imageDir]
 
         stdout: SplitParser {
@@ -96,10 +104,15 @@ Singleton {
         if (parts.length < 2 || parts[0] === "")
             return;
 
+        // Nothing was actually copied; see the watcher above.
+        const bytes = parseInt(parts[1], 10) || 0;
+        if (bytes <= 0)
+            return;
+
         root.add({
             kind: "image",
             path: parts[0],
-            bytes: parseInt(parts[1], 10) || 0,
+            bytes: bytes,
             time: Date.now()
         }, e => e.kind === "image" && e.path === parts[0]);
     }
@@ -214,8 +227,12 @@ Singleton {
             try {
                 const parsed = JSON.parse(stateFile.text());
                 const list = Array.isArray(parsed.entries) ? parsed.entries : [];
-                // Rows written before images existed have no kind.
-                root.entries = list.map(e => Object.assign({ kind: "text" }, e));
+                // Rows written before images existed have no kind. An image
+                // row with no bytes to it was one of the empty offers the
+                // watcher now throws away, and goes the same way here so a
+                // history saved before that still comes back clean.
+                root.entries = list.map(e => Object.assign({ kind: "text" }, e))
+                                   .filter(e => e.kind !== "image" || e.bytes > 0);
             } catch (e) {
                 console.warn("clipboard: could not parse clipboard.json:", e);
                 root.entries = [];

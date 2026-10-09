@@ -11,12 +11,9 @@ import "modules/polkit"
 
 Scope {
     id: root
-    // One bar per output. A screen that is taller than it is wide -- this
-    // machine's second monitor is rotated a quarter turn -- gets the bar
-    // across its bottom instead of down its left edge, where a vertical bar
-    // would eat a twentieth of an already narrow screen. Reading it off the
-    // shape rather than the output name means a monitor added or re-rotated
-    // sorts itself out.
+    // One bar per output, on whichever edge of it Modules.Shell says -- the
+    // launcher and the clipboard open flush against that same edge, so the
+    // three of them read the rule from one place.
     Variants {
         model: Quickshell.screens
 
@@ -24,7 +21,7 @@ Scope {
             required property var modelData
 
             screen: modelData
-            horizontal: modelData.height > modelData.width
+            horizontal: Modules.Shell.barIsHorizontal(modelData)
         }
     }
     Cheatsheet {}

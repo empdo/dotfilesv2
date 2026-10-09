@@ -9,10 +9,9 @@ visiblePlugin=autogain#0
 outputDevice=alsa_output.pci-0000_0f_00.6.analog-stereo
 plugins=delay#0
 useDefaultOutputDevice=false
-visiblePage=pluginsPage
 visiblePlugin=delay#0
 
 [Window]
-height=941
+height=1396
 visiblePage=pwPage
-width=1056
+width=2456

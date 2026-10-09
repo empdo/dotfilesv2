@@ -28,7 +28,7 @@ Scope {
     property var screen: null
     property bool horizontal: false
 
-    readonly property int thickness: 60
+    readonly property int thickness: Modules.Shell.barThickness
 
     property color textColor: Modules.Theme.foreground
     property color backgroundColor: Modules.Theme.background

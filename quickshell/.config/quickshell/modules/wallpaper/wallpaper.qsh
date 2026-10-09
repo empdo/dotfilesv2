@@ -2,7 +2,7 @@
 shell {
     module wallpaper {
         exec setwall {
-            command: ["/home/emil/.config/hypr/setwallpaper"]
+            command: ["$HOME/.config/hypr/setwallpaper"]
         }
     }
 }

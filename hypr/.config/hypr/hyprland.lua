@@ -183,6 +183,19 @@ hl.config({
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
 
+----------------------
+---- WINDOW RULES ----
+----------------------
+
+-- Ignore maximize requests from apps. kitty remembers its last window state,
+-- so once one got maximized every new kitty would open maximized over the tiles.
+hl.window_rule({
+    name  = "suppress-maximize-events",
+    match = { class = ".*" },
+    suppress_event = "maximize",
+})
+
+
 ---------------------
 ---- KEYBINDINGS ----
 ---------------------

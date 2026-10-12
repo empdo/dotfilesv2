@@ -9,11 +9,6 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 PS1='[\u@\h \W]\$ '
 
-
-if [[ -z $DISPLAY && $(tty) == /dev/tty1 ]]; then
-	exec Hyprland
-fi
-
 export GTK_THEME=Adwaita:dark
 export MOZ_ENABLE_WAYLAND=1
 export JAVA_HOME=/usr/lib/jvm/java-25-openjdk/bin/java

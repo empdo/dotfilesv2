@@ -19,5 +19,11 @@ fi
 # but the config is still stowed for when tmux is started by hand)
 [[ -d ~/.tmux/plugins/tpm ]] || git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
+# greetd lives in /etc, outside stow's reach: copy it in rather than symlinking,
+# since a root-run login daemon shouldn't read config from a user-writable file
+sudo pacman -S --needed greetd
+sudo install -Dm644 "$DOT/greetd/etc/greetd/config.toml" /etc/greetd/config.toml
+sudo systemctl enable greetd.service
+
 "$DOT/bootstrap.sh"
 echo "Log out and back in; zsh starts herdr from then on."

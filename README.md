@@ -7,7 +7,7 @@ Managed with [GNU Stow](https://www.gnu.org/software/stow/) — each folder is a
 
 ```bash
 sudo pacman -S git
-git clone https://github.com/empdo/dotfiles ~/dotfiles
+git clone https://github.com/empdo/dotfilesv2 ~/dotfiles
 ~/dotfiles/install.sh
 ```
 

@@ -1,0 +1,12 @@
+[terminal]
+vt = 1
+
+# Runs once at boot: autologin straight into Hyprland
+[initial_session]
+command = "start-hyprland"
+user = "emil"
+
+# Only used if Hyprland exits/crashes; falls back to a plain login prompt
+[default_session]
+command = "agetty --noclear -"
+user = "greeter"

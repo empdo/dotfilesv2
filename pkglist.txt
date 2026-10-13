@@ -1,13 +1,15 @@
 7zip
+aarch64-linux-gnu-gcc
 amd-ucode
 base
 base-devel
-blueman
+bc
 bluetui
 bluez
 bluez-deprecated-tools
 bluez-utils
 chromium
+darktable
 discord
 dolphin
 dosfstools
@@ -16,9 +18,11 @@ efibootmgr
 ex-vi-compat
 exfatprogs
 firefox
+freecad
 gamescope
 gammaray
 git
+greetd
 htop
 hyprland
 hyprpaper
@@ -36,6 +40,7 @@ kicad-library
 kirigami
 kitty
 krita
+krita-plugin-gmic
 linux
 linux-firmware
 lldb
@@ -43,6 +48,8 @@ lsp-plugins
 lxappearance
 maven
 mesa
+mesa-utils
+mokutil
 neovim
 networkmanager
 nginx
@@ -50,6 +57,7 @@ noto-fonts
 noto-fonts-emoji
 npm
 nwg-look
+ollama
 openbsd-netcat
 openssh
 pamixer
@@ -64,9 +72,12 @@ pipewire-zeroconf
 protobuf
 protontricks
 python-matplotlib
+python-scipy
 qt5-graphicaleffects
 qtcreator
+rawtherapee
 rofi
+samba
 satty
 socat
 steam
@@ -81,6 +92,7 @@ ttf-jetbrains-mono-nerd
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
 typst
+usbmuxd
 vim
 waybar
 wl-clipboard

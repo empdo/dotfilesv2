@@ -3,6 +3,8 @@
 set -euo pipefail
 DOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# steam lives in [multilib], which a fresh Arch install leaves commented out
+sudo sed -i '/^#\[multilib\]/,/^#Include/ s/^#//' /etc/pacman.conf
 sudo pacman -Syu --needed git base-devel stow
 sudo pacman -S --needed - < "$DOT/pkglist.txt"
 
